@@ -1,0 +1,21 @@
+project: JSONMap Demo
+version: 1.0.0
+features:
+  - name: Visualization
+    status: Production
+    complexity: 5
+  - name: Conversion
+    status: Beta
+    supported:
+      - YAML
+      - CSV
+      - XML
+metadata:
+  author: JSONMap Team
+  license: MIT
+  links:
+    github: https://github.com/alexandre/JSONMap
+    docs: https://jsonmap.app/docs
+stats:
+  performance: 98.5
+  reliability: 0.999

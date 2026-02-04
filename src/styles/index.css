@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --background: #1a1b26;
+  --surface: #24283b;
+  --primary: #7aa2f7;
+  --secondary: #bb9af7;
+  --accent: #7dcfff;
+  --text: #c0caf5;
+  --muted: #565f89;
+  --border: #414868;
+}
+
+.light {
+  color-scheme: light;
+  --background: #ffffff;
+  --surface: #f3f4f6;
+  --primary: #2563eb;
+  --secondary: #7c3aed;
+  --accent: #0ea5e9;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+body {
+  @apply bg-background text-text font-sans antialiased overflow-hidden select-none;
+  background-color: transparent !important;
+}
+
+#root {
+  height: 100vh;
+  background-color: transparent;
+}
+
+/* ReactFlow customization */
+.react-flow__node {
+  @apply rounded-lg shadow-lg border border-border;
+}
+
+.react-flow__handle {
+  @apply w-2 h-2 bg-primary border-none;
+}
+
+.react-flow__controls {
+  @apply bg-surface border-border shadow-xl;
+}
+
+.react-flow__controls-button {
+  @apply border-border text-text;
+  transition: background-color 0.2s;
+}
+
+.react-flow__controls-button:hover {
+  background-color: var(--muted);
+  opacity: 0.2;
+}
+
+.react-flow__attribution {
+  @apply hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full transition-colors;
+  background-color: var(--muted);
+  opacity: 0.3;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar-corner {
+  @apply bg-transparent;
+}

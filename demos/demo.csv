@@ -1,0 +1,7 @@
+name,category,status,priority
+"Interactive Graph","UI","Production",1
+"JQ Engine","Tools","Production",2
+"JSONPath","Tools","Production",2
+"JWT Decoder","Tools","Production",3
+"Anonymizer","Security","Production",3
+"Drag & Drop","UX","Production",1
