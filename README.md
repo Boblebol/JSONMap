@@ -1,81 +1,89 @@
-# JSONMap 🗺️
+# JSONMap
 
-A high-performance, native macOS visualizer for JSON, YAML, XML, TOML, and CSV. Built with **Rust (Tauri)** and **React**.
+<div align="center">
+  <img src="https://github.com/JSONMap/JSONMap/raw/main/src-tauri/icons/128x128@2x.png" width="128" alt="JSONMap Logo" />
+  <h1>JSONMap</h1>
+  <p>
+    <strong>A high-performance, native macOS visualizer for JSON, YAML, XML, TOML, and CSV.</strong>
+  </p>
 
-![License](https://img.shields.io/github/license/JSONMap/JSONMap)
-[![Release](https://img.shields.io/github/v/release/JSONMap/JSONMap)](https://github.com/JSONMap/JSONMap/releases)
-![Downloads](https://img.shields.io/github/downloads/JSONMap/JSONMap/total)
+  [![Version](https://img.shields.io/github/v/release/JSONMap/JSONMap?style=flat-square&color=blue)](https://github.com/JSONMap/JSONMap/releases)
+  [![License](https://img.shields.io/github/license/JSONMap/JSONMap?style=flat-square&color=green)](LICENSE)
+  [![Downloads](https://img.shields.io/github/downloads/JSONMap/JSONMap/total?style=flat-square&color=orange)](https://github.com/JSONMap/JSONMap/releases)
+  [![Platform](https://img.shields.io/badge/platform-macOS-black?style=flat-square&logo=apple)](https://github.com/JSONMap/JSONMap/releases)
+</div>
 
-## 📥 Installation
+<br />
 
-Download the latest version from the [Releases page](https://github.com/JSONMap/JSONMap/releases).
+<div align="center">
+  <a href="https://github.com/JSONMap/JSONMap/releases/latest">
+    <img src="https://img.shields.io/badge/Download_for_Mac-3572EE?style=for-the-badge&logo=apple&logoColor=white" alt="Download for Mac" height="40" />
+  </a>
+</div>
 
-1. Download the `.dmg` file.
-2. Open it and drag "JSONMap" to your Applications folder.
-3. Open JSONMap from your Applications.
+<br />
+
+> **JSONMap** is a developer-first tool designed to make navigating complex data structures intuitive and fast. Built with **Tauri (Rust)** and **React**, it combines native performance with a modern, beautiful UI.
 
 ## ✨ Features
 
-- **Multi-Format Support**: Instantly parse and visualize JSON, YAML, XML, TOML, and CSV.
-- **Interactive Graph**: Navigate complex data structures with a powerful, zoomable, and interactive graph.
-- **Advanced Tools**:
-  - 🔍 **JQ Querying**: Run standard JQ filters on your data.
-  - 📍 **JSONPath**: Use JSONPath for precise selection.
-  - 🔐 **JWT Decoder**: Full header and payload breakdown for tokens.
-  - 🛡️ **Anonymizer**: Locally mask sensitive PII with one click.
-- **Native macOS Experience**:
-  - 🪟 **Vibrancy**: Translucent "UnderWindowBackground" effect.
-  - 📁 **Native Menus**: "Open Recent" tracking and standard shortcuts.
-  - 🔔 **Notifications**: macOS native alerts for file actions.
-- **Power User Tools**:
-  - 🏗️ **Code Gen**: Generate TypeScript, Rust (Serde), Go, and Python models.
-  - ⚡ **Minify/Format**: Instant compression and beautification.
-  - 🎨 **Light/Dark Mode**: Persisted theme engine.
+- **🚀 Multi-Format Support**: Instantly parse and visualize **JSON**, **YAML**, **XML**, **TOML**, and **CSV**.
+- **🕸️ Interactive Graph**: Navigate deep hierarchies with a zoomable, node-based graph view.
+- **🔒 Privacy First**: All processing happens **locally**. Your data never leaves your machine.
+- **🛠️ Power Tools**:
+    - **JQ Querying**: Filter and transform data using JQ syntax.
+    - **JWT Decoder**: Inspect tokens without external websites.
+    - **Anonymizer**: Mask PII/sensitive data with one click.
+    - **Code Generation**: Generate TypeScript, Go, Rust, and Python types from your JSON.
+- **🎨 Native Experience**:
+    - Dark/Light mode support.
+    - Native macOS vibrancy and blur effects.
+    - Keyboard shortcuts for efficiency.
 
-## 🚀 Getting Started
+## 📸 Screenshots
 
-### Prerequisites
+| Visualizer Graph | Editor & Tools |
+|:---:|:---:|
+| <img src="docs/screenshots/graph-view.png" alt="Graph View" width="400" /> | <img src="docs/screenshots/editor-view.png" alt="Editor View" width="400" /> |
 
+*(Note: Screenshots are placeholders. Please add `graph-view.png` and `editor-view.png` to `docs/screenshots/`)*
+
+## 📥 Installation
+
+1. Go to the [Releases page](https://github.com/JSONMap/JSONMap/releases).
+2. Download the latest `.dmg` file (`JSONMap_x64.dmg` or `JSONMap_aarch64.dmg`).
+3. Open the `.dmg` and drag **JSONMap** to your **Applications** folder.
+
+## 🏗️ Development
+
+Prerequisites:
 - [Rust](https://www.rust-lang.org/tools/install)
 - [Node.js](https://nodejs.org/) (v18+)
+- [pnpm](https://pnpm.io/)
 
-### Installation
+```bash
+# Clone the repository
+git clone https://github.com/JSONMap/JSONMap.git
+cd JSONMap
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/alexandre/JSONMap.git
-   cd JSONMap
-   ```
+# Install dependencies
+pnpm install
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# Run in development mode
+pnpm tauri dev
 
-3. Run in development mode:
-   ```bash
-   npm run tauri dev
-   ```
+# Build for production
+pnpm tauri build
+```
 
-## 🛠️ Tech Stack
+## 🤝 Contributing
 
-- **Backend**: Rust, Tauri
-- **Frontend**: React, TypeScript, Tailwind CSS
-- **Visualization**: React Flow
-- **Editor**: Monaco (VS Code core)
-- **Rust Crates**: `jaq`, `serde`, `quick-xml`, `jsonpath_lib`, `window-vibrancy`.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## ⌨️ Shortcuts
+## 📄 License
 
-- `⌘ + O`: Open File
-- `⌘ + S`: Save File
-- `⌘ + E`: Export Graph
-- `?`: Toggle Shortcut Overlay
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-## 🛡️ Privacy
+## ❤️ Author
 
-JSONMap is built with privacy first. All data processing (parsing, anonymizing, decoding) happens **locally on your machine**. No data is ever sent to external servers.
-
----
-
-Built with ❤️ by [Alexandre Enouf (Boblebol)](https://github.com/Boblebol).
+Built with passion by **[Alexandre Enouf (Boblebol)](https://github.com/Boblebol)**.
