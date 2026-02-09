@@ -2,9 +2,17 @@
 
 A high-performance, native macOS visualizer for JSON, YAML, XML, TOML, and CSV. Built with **Rust (Tauri)** and **React**.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
-![OS](https://img.shields.io/badge/OS-macOS-black?style=flat-square&logo=apple)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![License](https://img.shields.io/github/license/JSONMap/JSONMap)
+[![Release](https://img.shields.io/github/v/release/JSONMap/JSONMap)](https://github.com/JSONMap/JSONMap/releases)
+![Downloads](https://img.shields.io/github/downloads/JSONMap/JSONMap/total)
+
+## 📥 Installation
+
+Download the latest version from the [Releases page](https://github.com/JSONMap/JSONMap/releases).
+
+1. Download the `.dmg` file.
+2. Open it and drag "JSONMap" to your Applications folder.
+3. Open JSONMap from your Applications.
 
 ## ✨ Features
 

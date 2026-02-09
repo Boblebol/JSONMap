@@ -78,9 +78,14 @@ export const HelpPanel = () => {
                             <h3 className="font-bold text-lg mb-1">Need more help?</h3>
                             <p className="text-sm text-muted">Check out the full documentation online.</p>
                         </div>
-                        <button className="px-6 py-2 bg-primary text-background rounded-full font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                        <a 
+                            href="https://jsonmap.github.io/JSONMap/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-6 py-2 bg-primary text-background rounded-full font-bold flex items-center gap-2 hover:opacity-90 transition-opacity"
+                        >
                             Documentation <ExternalLink size={16} />
-                        </button>
+                        </a>
                     </div>
                 </section>
             </div>

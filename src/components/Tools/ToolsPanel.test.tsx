@@ -12,7 +12,7 @@ vi.mock('../../utils/tauri', () => ({
 
 describe('ToolsPanel', () => {
     it('renders commands buttons', () => {
-        render(<ToolsPanel content="{}" />);
+        render(<ToolsPanel content="{}" setContent={() => { }} setFormat={() => { }} />);
         expect(screen.getByText('JQ Query')).toBeInTheDocument();
         expect(screen.getByText('JWT Decoder')).toBeInTheDocument();
     });

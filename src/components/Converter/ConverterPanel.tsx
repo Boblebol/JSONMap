@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowRightLeft, Copy, Check } from 'lucide-react';
+import { ArrowRight, Copy, Check } from 'lucide-react';
 import { tauriApi, FileFormat } from '../../utils/tauri';
 import { CodeEditor } from '../Editor/CodeEditor';
 
