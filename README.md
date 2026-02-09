@@ -78,4 +78,4 @@ JSONMap is built with privacy first. All data processing (parsing, anonymizing, 
 
 ---
 
-Built with ❤️ by the JSONMap Team.
+Built with ❤️ by [Alexandre Enouf (Boblebol)](https://github.com/Boblebol).
