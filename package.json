@@ -1,7 +1,7 @@
 {
   "name": "tauri-appjson-map",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Alexandre Enouf (Boblebol)",
   "type": "module",
   "scripts": {
