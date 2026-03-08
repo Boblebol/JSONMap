@@ -1,9 +1,11 @@
 [package]
 name = "json-map"
-version = "0.0.0"
+version = "1.0.1"
 description = "A native macOS JSON visualizer"
-authors = ["you"]
+authors = ["Alexandre Enouf (Boblebol) <alexandre.enouf@gmail.com>"]
 edition = "2021"
+repository = "https://github.com/Boblebol/JSONMap"
+license = "MIT"
 
 [build-dependencies]
 tauri-build = { version = "2.0.0", features = [] }
