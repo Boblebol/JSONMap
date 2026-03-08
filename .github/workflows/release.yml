@@ -43,42 +43,53 @@ jobs:
         run: pnpm install
 
       - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__
-          releaseName: 'v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: false
-          prerelease: false
-          includeRelease: false # We handle the upload manually to control filenames
+        run: pnpm tauri build
 
-      - name: Get version from package.json
-        id: package_version
+      - name: List artifacts for debugging
         run: |
-          echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+          echo "Listing DMG directory:"
+          ls -R src-tauri/target/release/bundle/dmg || echo "DMG directory not found"
+          echo "Listing release directory:"
+          ls -F src-tauri/target/release/ || echo "Release directory not found"
 
       - name: Rename artifacts for predictable links
         run: |
-          cd src-tauri/target/release/bundle/dmg/
-          for f in *.dmg; do
-            if [[ $f == *"_x64.dmg" ]]; then
-              cp "$f" "JSONMap_x64.dmg"
-            elif [[ $f == *"_aarch64.dmg" ]]; then
-              cp "$f" "JSONMap_aarch64.dmg"
-            elif [[ $f == *"_x86_64.dmg" ]]; then
-              cp "$f" "JSONMap_x64.dmg"
-            else
-              cp "$f" "JSONMap_x64.dmg"
-            fi
-          done
+          # Find the DMG and copy it to a name without version
+          # Tauri v2 artifacts are usually in src-tauri/target/release/bundle/dmg/
+          # but we check recursively just in case.
+          SEARCH_DIR="src-tauri/target/release/bundle/dmg"
+          if [ -d "$SEARCH_DIR" ]; then
+            cd "$SEARCH_DIR"
+            for f in *.dmg; do
+              case "$f" in
+                *_x64.dmg|*_x86_64.dmg)
+                  cp "$f" "JSONMap_x64.dmg"
+                  echo "Created JSONMap_x64.dmg from $f"
+                  ;;
+                *_aarch64.dmg)
+                  cp "$f" "JSONMap_aarch64.dmg"
+                  echo "Created JSONMap_aarch64.dmg from $f"
+                  ;;
+                *)
+                  # If name is ambiguous, just copy as x64 as fallback
+                  cp "$f" "JSONMap_x64.dmg"
+                  echo "Created JSONMap_x64.dmg from $f (fallback)"
+                  ;;
+              esac
+            done
+          else
+            echo "Error: Search directory $SEARCH_DIR not found!"
+            exit 1
+          fi
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
           files: |
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/release/bundle/macos/*.app.tar.gz
