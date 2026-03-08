@@ -36,7 +36,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
 let nodeId = 0;
 const getNextId = () => `n_${nodeId++}`;
-const MAX_NODES = 500;
+const MAX_NODES = 300;
 const MAX_CHILDREN = 50;
 
 export const jsonToGraph = (data: any) => {
