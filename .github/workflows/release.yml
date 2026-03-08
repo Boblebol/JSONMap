@@ -47,9 +47,40 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__ # standard tag name
+          tagName: v__VERSION__
           releaseName: 'v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
-          includeRelease: true
+          includeRelease: false # We handle the upload manually to control filenames
+
+      - name: Get version from package.json
+        id: package_version
+        run: |
+          echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Rename artifacts for predictable links
+        run: |
+          cd src-tauri/target/release/bundle/dmg/
+          for f in *.dmg; do
+            if [[ $f == *"_x64.dmg" ]]; then
+              cp "$f" "JSONMap_x64.dmg"
+            elif [[ $f == *"_aarch64.dmg" ]]; then
+              cp "$f" "JSONMap_aarch64.dmg"
+            elif [[ $f == *"_x86_64.dmg" ]]; then
+              cp "$f" "JSONMap_x64.dmg"
+            else
+              cp "$f" "JSONMap_x64.dmg"
+            fi
+          done
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            src-tauri/target/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/macos/*.app.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
