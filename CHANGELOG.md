@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite for both backend and frontend.
 - Test coverage reporting (`npm run test:coverage`).
 - New premium application logo (integrated in UI and system icons).
+- Interactive "About" modal accessible by clicking the app logo.
 - Unit tests for JSON schema generation logic.
 - Integration tests for standard components.
 
