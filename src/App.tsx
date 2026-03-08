@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { CodeEditor } from './components/Editor/CodeEditor';
@@ -38,6 +38,15 @@ function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [isGraphStale, setIsGraphStale] = useState(true);
+
+  // Use refs for handlers that need latest state without re-triggering effects
+  const contentRef = useRef(content);
+  const formatRef = useRef(format);
+
+  useEffect(() => {
+    contentRef.current = content;
+    formatRef.current = format;
+  }, [content, format]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,7 +117,7 @@ function App() {
     return () => clearTimeout(debounceId);
   }, [content, format, activeTab, isGraphStale]);
 
-  const handleOpenFile = async () => {
+  const handleOpenFile = useCallback(async () => {
     try {
       const result = await tauriApi.openFile();
       if (result) {
@@ -122,11 +131,11 @@ function App() {
       console.error(e);
       setError("Failed to open file: " + e.message);
     }
-  };
+  }, []);
 
-  const handleSaveFile = async () => {
+  const handleSaveFile = useCallback(async () => {
     try {
-      const path = await tauriApi.saveFile(content);
+      const path = await tauriApi.saveFile(contentRef.current);
       if (path && window.__TAURI__) {
         await tauriApi.showNotification("File Saved", `Successfully saved to ${path}`);
       }
@@ -134,7 +143,7 @@ function App() {
       console.error(e);
       setError("Failed to save file: " + e.message);
     }
-  };
+  }, []);
 
   const handleMinify = () => {
     try {
@@ -150,7 +159,7 @@ function App() {
     }
   };
 
-  const handleLoadFilePath = async (path: string) => {
+  const handleLoadFilePath = useCallback(async (path: string) => {
     try {
       const { readTextFile } = await import('@tauri-apps/plugin-fs');
       const fileContent = await readTextFile(path);
@@ -170,16 +179,16 @@ function App() {
       console.error("Failed to load path:", e);
       setError("Failed to load recent file: " + e.message);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    let unlisten: any;
-    let unlistenDrop: any;
+    let unlisten: Promise<any[]>;
+    let unlistenDrop: Promise<any>;
 
     const setupListeners = async () => {
       if (window.__TAURI__) {
         const { listen } = await import('@tauri-apps/api/event');
-        unlisten = await Promise.all([
+        unlisten = Promise.all([
           listen('menu-open', () => handleOpenFile()),
           listen('menu-save', () => handleSaveFile()),
           listen('menu-export', () => {
@@ -190,28 +199,10 @@ function App() {
           })
         ]);
 
-        unlistenDrop = await listen('tauri://drag-drop', async (event: any) => {
+        unlistenDrop = listen('tauri://drag-drop', async (event: any) => {
           const paths = event.payload.paths as string[];
           if (paths && paths.length > 0) {
-            const path = paths[0];
-            try {
-              const { readTextFile } = await import('@tauri-apps/plugin-fs');
-              const fileContent = await readTextFile(path);
-              const ext = path.split('.').pop()?.toLowerCase();
-              let newFormat = 'json';
-              if (['yaml', 'yml'].includes(ext || '')) newFormat = 'yaml';
-              if (ext === 'xml') newFormat = 'xml';
-              if (ext === 'toml') newFormat = 'toml';
-              if (ext === 'csv') newFormat = 'csv';
-
-              setContent(fileContent);
-              setFormat(newFormat);
-              if (window.__TAURI__) {
-                await tauriApi.addRecentFile(path);
-              }
-            } catch (e) {
-              console.error("Failed to read dropped file:", e);
-            }
+            handleLoadFilePath(paths[0]);
           }
         });
       }
@@ -219,14 +210,10 @@ function App() {
 
     setupListeners();
     return () => {
-      if (unlisten) {
-        unlisten.then((fns: any[]) => fns.forEach(fn => fn()));
-      }
-      if (unlistenDrop) {
-        unlistenDrop.then((fn: any) => fn());
-      }
+      if (unlisten) unlisten.then((fns: any[]) => fns.forEach(fn => fn()));
+      if (unlistenDrop) unlistenDrop.then((fn: any) => fn());
     };
-  }, [content, format]);
+  }, [handleOpenFile, handleSaveFile, handleLoadFilePath]);
 
   return (
     <div className="flex h-screen w-screen bg-transparent overflow-hidden text-text font-sans">
