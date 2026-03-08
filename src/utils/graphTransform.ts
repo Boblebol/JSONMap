@@ -22,8 +22,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
     nodes.forEach((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
-        node.targetPosition = direction === 'LR' ? Position.Left : Position.Left;
-        node.sourcePosition = direction === 'LR' ? Position.Right : Position.Right;
+        node.targetPosition = direction === 'LR' ? Position.Left : Position.Top;
+        node.sourcePosition = direction === 'LR' ? Position.Right : Position.Bottom;
 
         node.position = {
             x: nodeWithPosition.x - nodeWidth / 2,
@@ -36,7 +36,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
 let nodeId = 0;
 const getNextId = () => `n_${nodeId++}`;
-const MAX_NODES = 1000;
+const MAX_NODES = 500;
+const MAX_CHILDREN = 50;
 
 export const jsonToGraph = (data: any) => {
     nodeId = 0;
@@ -66,7 +67,7 @@ export const jsonToGraph = (data: any) => {
 
         nodes.push({
             id,
-            data: { label: displayLabel, originalValue: obj },
+            data: { label: displayLabel },
             position: { x: 0, y: 0 },
             type: 'default',
         });
@@ -83,13 +84,23 @@ export const jsonToGraph = (data: any) => {
         // Recurse
         if (type === 'object' && obj !== null) {
             const entries = Object.entries(obj);
+            let childrenCount = 0;
             for (const [key, value] of entries) {
                 if (truncated) break;
+                if (childrenCount >= MAX_CHILDREN) {
+                    truncated = true;
+                    break;
+                }
                 traverse(value, id, key);
+                childrenCount++;
             }
         } else if (type === 'array') {
             for (let i = 0; i < obj.length; i++) {
                 if (truncated) break;
+                if (i >= MAX_CHILDREN) {
+                    truncated = true;
+                    break;
+                }
                 traverse(obj[i], id, `[${i}]`);
             }
         }
