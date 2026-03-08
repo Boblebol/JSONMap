@@ -54,6 +54,12 @@
 2. Download the latest `.dmg` file (`JSONMap_x64.dmg` or `JSONMap_aarch64.dmg`).
 3. Open the `.dmg` and drag **JSONMap** to your **Applications** folder.
 
+> [!IMPORTANT]
+> **MacOS Security Note**: Since the app is currently unsigned, you might see a warning that the "app is damaged" or cannot be opened. To fix this, run the following command in your terminal:
+> ```bash
+> xattr -cr /Applications/JSONMap.app
+> ```
+
 ## 🏗️ Development
 
 Prerequisites:
