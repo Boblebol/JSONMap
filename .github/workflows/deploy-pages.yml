@@ -26,6 +26,12 @@ jobs:
         with:
           enablement: true
 
+      - name: Update Version in HTML
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$VERSION/g" docs/index.html
+          echo "Updated HTML to version v$VERSION"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
