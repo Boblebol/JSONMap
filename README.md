@@ -1,22 +1,22 @@
 # JSONMap
 
 <div align="center">
-  <img src="https://github.com/JSONMap/JSONMap/raw/main/src-tauri/icons/128x128@2x.png" width="128" alt="JSONMap Logo" />
+  <img src="https://github.com/Boblebol/JSONMap/raw/main/src-tauri/icons/128x128@2x.png" width="128" alt="JSONMap Logo" />
   <h1>JSONMap</h1>
   <p>
     <strong>A high-performance, native macOS visualizer for JSON, YAML, XML, TOML, and CSV.</strong>
   </p>
 
-  [![Version](https://img.shields.io/github/v/release/JSONMap/JSONMap?style=flat-square&color=blue)](https://github.com/JSONMap/JSONMap/releases)
-  [![License](https://img.shields.io/github/license/JSONMap/JSONMap?style=flat-square&color=green)](LICENSE)
-  [![Downloads](https://img.shields.io/github/downloads/JSONMap/JSONMap/total?style=flat-square&color=orange)](https://github.com/JSONMap/JSONMap/releases)
-  [![Platform](https://img.shields.io/badge/platform-macOS-black?style=flat-square&logo=apple)](https://github.com/JSONMap/JSONMap/releases)
+  [![Version](https://img.shields.io/github/v/release/Boblebol/JSONMap?style=flat-square&color=blue)](https://github.com/Boblebol/JSONMap/releases)
+  [![License](https://img.shields.io/github/license/Boblebol/JSONMap?style=flat-square&color=green)](LICENSE)
+  [![Downloads](https://img.shields.io/github/downloads/Boblebol/JSONMap/total?style=flat-square&color=orange)](https://github.com/Boblebol/JSONMap/releases)
+  [![Platform](https://img.shields.io/badge/platform-macOS-black?style=flat-square&logo=apple)](https://github.com/Boblebol/JSONMap/releases)
 </div>
 
 <br />
 
 <div align="center">
-  <a href="https://github.com/JSONMap/JSONMap/releases/latest">
+  <a href="https://github.com/Boblebol/JSONMap/releases/latest">
     <img src="https://img.shields.io/badge/Download_for_Mac-3572EE?style=for-the-badge&logo=apple&logoColor=white" alt="Download for Mac" height="40" />
   </a>
 </div>
@@ -50,7 +50,7 @@
 
 ## 📥 Installation
 
-1. Go to the [Releases page](https://github.com/JSONMap/JSONMap/releases).
+1. Go to the [Releases page](https://github.com/Boblebol/JSONMap/releases).
 2. Download the latest `.dmg` file (`JSONMap_x64.dmg` or `JSONMap_aarch64.dmg`).
 3. Open the `.dmg` and drag **JSONMap** to your **Applications** folder.
 
@@ -63,7 +63,7 @@ Prerequisites:
 
 ```bash
 # Clone the repository
-git clone https://github.com/JSONMap/JSONMap.git
+git clone https://github.com/Boblebol/JSONMap.git
 cd JSONMap
 
 # Install dependencies
