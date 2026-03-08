@@ -7,6 +7,7 @@
     <strong>A high-performance, native macOS visualizer for JSON, YAML, XML, TOML, and CSV.</strong>
   </p>
 
+  [![CI](https://github.com/Boblebol/JSONMap/actions/workflows/ci.yml/badge.svg)](https://github.com/Boblebol/JSONMap/actions/workflows/ci.yml)
   [![Version](https://img.shields.io/github/v/release/Boblebol/JSONMap?style=flat-square&color=blue)](https://github.com/Boblebol/JSONMap/releases)
   [![License](https://img.shields.io/github/license/Boblebol/JSONMap?style=flat-square&color=green)](LICENSE)
   [![Downloads](https://img.shields.io/github/downloads/Boblebol/JSONMap/total?style=flat-square&color=orange)](https://github.com/Boblebol/JSONMap/releases)
@@ -84,7 +85,7 @@ pnpm tauri build
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please check our [Contributing Guidelines](CONTRIBUTING.md) and see the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 📄 License
 
