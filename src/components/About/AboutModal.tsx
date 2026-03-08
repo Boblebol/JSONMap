@@ -40,7 +40,7 @@ export const AboutModal = ({ isOpen, onClose }: AboutModalProps) => {
                                     <img src="/logo.png" alt="JSONMap Logo" className="w-full h-full object-cover" />
                                 </div>
                                 <h2 className="text-2xl font-bold text-text mb-1">JSONMap</h2>
-                                <p className="text-sm text-text/60 mb-6">Version 1.1.1</p>
+                                <p className="text-sm text-text/60 mb-6">Version 1.1.2</p>
 
                                 <div className="flex gap-4">
                                     <a href="https://github.com/Boblebol/JSONMap" target="_blank" rel="noreferrer" className="p-2 bg-background/50 hover:bg-background rounded-xl transition-all border border-border">

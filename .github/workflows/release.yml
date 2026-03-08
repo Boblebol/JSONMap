@@ -54,33 +54,28 @@ jobs:
 
       - name: Rename artifacts for predictable links
         run: |
-          # Find the DMG and copy it to a name without version
-          # Tauri v2 artifacts are usually in src-tauri/target/release/bundle/dmg/
-          # but we check recursively just in case.
-          SEARCH_DIR="src-tauri/target/release/bundle/dmg"
-          if [ -d "$SEARCH_DIR" ]; then
-            cd "$SEARCH_DIR"
-            for f in *.dmg; do
-              case "$f" in
-                *_x64.dmg|*_x86_64.dmg)
-                  cp "$f" "JSONMap_x64.dmg"
-                  echo "Created JSONMap_x64.dmg from $f"
-                  ;;
-                *_aarch64.dmg)
-                  cp "$f" "JSONMap_aarch64.dmg"
-                  echo "Created JSONMap_aarch64.dmg from $f"
-                  ;;
-                *)
-                  # If name is ambiguous, just copy as x64 as fallback
-                  cp "$f" "JSONMap_x64.dmg"
-                  echo "Created JSONMap_x64.dmg from $f (fallback)"
-                  ;;
-              esac
-            done
-          else
-            echo "Error: Search directory $SEARCH_DIR not found!"
-            exit 1
-          fi
+          # Use find to locate any DMGs regardless of exact path
+          # and copy them to the root of the release assets with clean names
+          mkdir -p release-artifacts
+          
+          # Find DMGs and copy them
+          find src-tauri/target/release/bundle/dmg -name "*.dmg" -exec cp {} release-artifacts/ \; 2>/dev/null || true
+          
+          cd release-artifacts
+          for f in *.dmg; do
+            if [[ "$f" == *"_x64.dmg" ]] || [[ "$f" == *"_x86_64.dmg" ]]; then
+              cp "$f" "JSONMap_x64.dmg"
+              echo "Aliased $f to JSONMap_x64.dmg"
+            elif [[ "$f" == *"_aarch64.dmg" ]]; then
+              cp "$f" "JSONMap_aarch64.dmg"
+              echo "Aliased $f to JSONMap_aarch64.dmg"
+            else
+              # Universal or unknown - alias as x64 for the default link
+              cp "$f" "JSONMap_x64.dmg"
+              echo "Aliased $f to JSONMap_x64.dmg (default)"
+            fi
+          done
+          ls -R .
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
@@ -91,7 +86,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            src-tauri/target/release/bundle/dmg/*.dmg
+            release-artifacts/*.dmg
             src-tauri/target/release/bundle/macos/*.app.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
