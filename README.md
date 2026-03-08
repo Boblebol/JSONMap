@@ -12,6 +12,8 @@
   [![License](https://img.shields.io/github/license/Boblebol/JSONMap?style=flat-square&color=green)](LICENSE)
   [![Downloads](https://img.shields.io/github/downloads/Boblebol/JSONMap/total?style=flat-square&color=orange)](https://github.com/Boblebol/JSONMap/releases)
   [![Platform](https://img.shields.io/badge/platform-macOS-black?style=flat-square&logo=apple)](https://github.com/Boblebol/JSONMap/releases)
+  
+  **[Live Demo & Documentation](https://boblebol.github.io/JSONMap/)**
 </div>
 
 <br />
@@ -93,4 +95,5 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## ❤️ Author
 
-Built with passion by **[Alexandre Enouf (Boblebol)](https://github.com/Boblebol)**.
+Built with passion by **[Alexandre Enouf](https://alexandre-enouf.fr/)**.
+Check out my other projects on [GitHub](https://github.com/Boblebol).
