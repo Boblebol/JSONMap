@@ -83,16 +83,5 @@ fn mock_from_schema(schema: &Value) -> Value {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_infer_schema() {
-        let data = json!({ "name": "test", "age": 25 });
-        let schema = infer_schema(&data);
-        assert_eq!(schema["type"], "object");
-        assert_eq!(schema["properties"]["name"]["type"], "string");
-        assert_eq!(schema["properties"]["age"]["type"], "number");
-    }
-}
+#[path = "schema_test.rs"]
+mod schema_test;

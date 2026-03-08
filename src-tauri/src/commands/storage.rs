@@ -58,3 +58,7 @@ pub fn show_notification(app: AppHandle, title: String, body: String) -> Result<
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "storage_test.rs"]
+mod storage_test;
