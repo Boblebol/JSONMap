@@ -13,6 +13,7 @@ import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { HelpPanel } from './components/Help/HelpPanel';
 import { ShortcutOverlay } from './components/Help/ShortcutOverlay';
 import { SchemaPanel } from './components/Tools/SchemaPanel';
+import { AboutModal } from './components/About/AboutModal';
 
 const SAMPLE_JSON = `{
   "name": "JSONMap",
@@ -35,6 +36,7 @@ function App() {
   const [graphData, setGraphData] = useState<{ nodes: Node[], edges: Edge[] }>({ nodes: [], edges: [] });
   const [error, setError] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -230,6 +232,7 @@ function App() {
         onOpen={window.__TAURI__ ? handleOpenFile : undefined}
         onSave={window.__TAURI__ ? handleSaveFile : undefined}
         onMinify={handleMinify}
+        onLogoClick={() => setShowAbout(true)}
       />
 
       {content.length > 1024 * 1024 && (
@@ -332,6 +335,7 @@ function App() {
       </main>
 
       <ShortcutOverlay isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
     </div>
   );
 }

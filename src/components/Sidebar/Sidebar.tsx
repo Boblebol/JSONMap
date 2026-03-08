@@ -18,9 +18,10 @@ interface SidebarProps {
     onOpen?: () => void;
     onSave?: () => void;
     onMinify?: () => void;
+    onLogoClick?: () => void;
 }
 
-export const Sidebar = ({ activeTab, setActiveTab, onOpen, onSave, onMinify }: SidebarProps) => {
+export const Sidebar = ({ activeTab, setActiveTab, onOpen, onSave, onMinify, onLogoClick }: SidebarProps) => {
     const NavItem = ({ id, Icon, label, onClick }: { id?: string, Icon: ComponentType<any>, label: string, onClick?: () => void }) => (
         <button
             onClick={onClick || (() => id && setActiveTab(id))}
@@ -39,9 +40,12 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpen, onSave, onMinify }: S
     return (
         <div className="w-20 h-full bg-[#16161e]/80 backdrop-blur-xl border-r border-border flex flex-col items-center py-6 z-10">
             <div className="mb-6 flex flex-col gap-2 items-center">
-                <div className="w-10 h-10 rounded-lg overflow-hidden mb-4 shadow-lg border border-primary/20">
+                <button
+                    onClick={onLogoClick}
+                    className="w-10 h-10 rounded-lg overflow-hidden mb-4 shadow-lg border border-primary/20 hover:scale-105 transition-transform active:scale-95"
+                >
                     <img src="/logo.png" alt="JSONMap Logo" className="w-full h-full object-cover" />
-                </div>
+                </button>
                 {onOpen && <NavItem Icon={FolderOpen} label="Open File" onClick={onOpen} />}
                 {onSave && <NavItem Icon={Save} label="Save File" onClick={onSave} />}
                 {onMinify && <NavItem Icon={Minimize2} label="Minify/Compact" onClick={onMinify} />}
