@@ -241,7 +241,7 @@
     <footer class="border-t border-white/5 bg-black/20 py-12">
         <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="flex items-center gap-2 text-slate-400 text-sm">
-                <span>&copy; 2026 JSONMap.</span>
+                <span>&copy; <span id="current-year">2026</span> JSONMap.</span>
                 <span class="text-slate-600">|</span>
                 <span>Open Source (MIT)</span>
             </div>
@@ -256,8 +256,11 @@
     </footer>
 
     <script>
-        async function fetchLatestVersion() {
+        async function fetchLatestRelease() {
             try {
+                // Update copyright year
+                document.getElementById('current-year').textContent = new Date().getFullYear();
+
                 const response = await fetch('https://api.github.com/repos/Boblebol/JSONMap/releases/latest');
                 if (!response.ok) throw new Error('Failed to fetch version');
                 const data = await response.json();
@@ -268,10 +271,10 @@
                     el.textContent = version;
                 });
             } catch (error) {
-                console.error('Error fetching version:', error);
+                console.error('Error fetching release info:', error);
             }
         }
-        fetchLatestVersion();
+        fetchLatestRelease();
     </script>
 
 </body>
