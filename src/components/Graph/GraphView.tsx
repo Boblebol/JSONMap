@@ -17,9 +17,10 @@ import 'reactflow/dist/style.css';
 interface GraphViewProps {
     initialNodes: Node[];
     initialEdges: Edge[];
+    isTruncated?: boolean;
 }
 
-export const GraphView = ({ initialNodes, initialEdges }: GraphViewProps) => {
+export const GraphView = ({ initialNodes, initialEdges, isTruncated }: GraphViewProps) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [exportQuality, setExportQuality] = useState(2);
@@ -155,7 +156,7 @@ export const GraphView = ({ initialNodes, initialEdges }: GraphViewProps) => {
                     )}
 
                     <div className="bg-background/50 backdrop-blur border border-border rounded-lg px-3 py-1.5 text-xs text-muted flex items-center gap-2 shadow-sm">
-                        <Info size={14} /> Nodes: {nodes.length} | Edges: {edges.length}
+                        <Info size={14} /> Nodes: {nodes.length} | Edges: {edges.length} {isTruncated && <span className="text-amber-500 font-bold ml-2">(Truncated View)</span>}
                     </div>
                 </Panel>
             </ReactFlow>

@@ -33,10 +33,11 @@ function App() {
   const [activeTab, setActiveTab] = useState('visualizer');
   const [content, setContent] = useState(SAMPLE_JSON);
   const [format, setFormat] = useState('json');
-  const [graphData, setGraphData] = useState<{ nodes: Node[], edges: Edge[] }>({ nodes: [], edges: [] });
+  const [graphData, setGraphData] = useState<{ nodes: Node[], edges: Edge[], truncated?: boolean }>({ nodes: [], edges: [] });
   const [error, setError] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [isGraphStale, setIsGraphStale] = useState(true);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -70,20 +71,22 @@ function App() {
   }, []);
 
   useEffect(() => {
+    setIsGraphStale(true);
+  }, [content, format]);
+
+  useEffect(() => {
     const updateGraph = async () => {
+      if (activeTab !== 'visualizer' || !isGraphStale) return;
+
       try {
-        // Try parsing using Tauri backend for multi-format support
-        // Fallback to JSON.parse if running in browser/preview without Tauri
         let parsedData;
         try {
-          // Basic heuristic for format if not set
           let currentFormat = format;
           if (content.trim().startsWith('<')) currentFormat = 'xml';
 
           if (window.__TAURI__) {
             parsedData = await tauriApi.parseContent(content, currentFormat);
           } else {
-            // Browser fallback (JSON only)
             parsedData = JSON.parse(content);
           }
         } catch (e: any) {
@@ -91,8 +94,9 @@ function App() {
           return;
         }
 
-        const { nodes, edges } = jsonToGraph(parsedData);
-        setGraphData({ nodes, edges });
+        const result = jsonToGraph(parsedData);
+        setGraphData(result);
+        setIsGraphStale(false);
         setError(null);
       } catch (err: any) {
         console.error("Graph update error:", err);
@@ -100,9 +104,9 @@ function App() {
       }
     };
 
-    const debounceId = setTimeout(updateGraph, 500);
+    const debounceId = setTimeout(updateGraph, 300);
     return () => clearTimeout(debounceId);
-  }, [content, format]);
+  }, [content, format, activeTab, isGraphStale]);
 
   const handleOpenFile = async () => {
     try {
@@ -295,6 +299,7 @@ function App() {
               <GraphView
                 initialNodes={graphData.nodes}
                 initialEdges={graphData.edges}
+                isTruncated={graphData.truncated}
               />
             </div>
           </>

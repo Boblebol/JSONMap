@@ -36,13 +36,20 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
 let nodeId = 0;
 const getNextId = () => `n_${nodeId++}`;
+const MAX_NODES = 1000;
 
 export const jsonToGraph = (data: any) => {
     nodeId = 0;
     const nodes: Node[] = [];
     const edges: Edge[] = [];
+    let truncated = false;
 
     const traverse = (obj: any, parentId?: string, label?: string) => {
+        if (nodeId >= MAX_NODES) {
+            truncated = true;
+            return;
+        }
+
         const id = getNextId();
         let type: string = typeof obj;
         if (Array.isArray(obj)) type = 'array';
@@ -50,8 +57,6 @@ export const jsonToGraph = (data: any) => {
 
         const nodeLabel = label ? `${label}: ${type}` : type;
 
-        // Add node
-        // For objects/arrays, we just show type and count maybe
         let displayLabel = nodeLabel;
         if (type === 'object') displayLabel = label || '{}';
         if (type === 'array') displayLabel = label ? `${label} []` : '[]';
@@ -63,7 +68,7 @@ export const jsonToGraph = (data: any) => {
             id,
             data: { label: displayLabel, originalValue: obj },
             position: { x: 0, y: 0 },
-            type: 'default', // Using default node for MVP, custom later
+            type: 'default',
         });
 
         if (parentId) {
@@ -77,16 +82,20 @@ export const jsonToGraph = (data: any) => {
 
         // Recurse
         if (type === 'object' && obj !== null) {
-            Object.entries(obj).forEach(([key, value]) => {
+            const entries = Object.entries(obj);
+            for (const [key, value] of entries) {
+                if (truncated) break;
                 traverse(value, id, key);
-            });
+            }
         } else if (type === 'array') {
-            obj.forEach((value: any, index: number) => {
-                traverse(value, id, `[${index}]`);
-            });
+            for (let i = 0; i < obj.length; i++) {
+                if (truncated) break;
+                traverse(obj[i], id, `[${i}]`);
+            }
         }
     };
 
     traverse(data);
-    return getLayoutedElements(nodes, edges);
+    const layout = getLayoutedElements(nodes, edges);
+    return { ...layout, truncated };
 };
