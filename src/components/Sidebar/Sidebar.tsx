@@ -19,18 +19,28 @@ interface SidebarProps {
     onSave?: () => void;
     onMinify?: () => void;
     onLogoClick?: () => void;
+    hasUnsavedChanges?: boolean;
 }
 
-export const Sidebar = ({ activeTab, setActiveTab, onOpen, onSave, onMinify, onLogoClick }: SidebarProps) => {
-    const NavItem = ({ id, Icon, label, onClick }: { id?: string, Icon: ComponentType<any>, label: string, onClick?: () => void }) => (
+export const Sidebar = ({
+    activeTab,
+    setActiveTab,
+    onOpen,
+    onSave,
+    onMinify,
+    onLogoClick,
+    hasUnsavedChanges = false
+}: SidebarProps) => {
+    const NavItem = ({ id, Icon, label, onClick, highlight }: { id?: string, Icon: ComponentType<any>, label: string, onClick?: () => void, highlight?: boolean }) => (
         <button
             onClick={onClick || (() => id && setActiveTab(id))}
             className={`p-3 rounded-xl transition-all mb-2 tooltip-trigger group relative
           ${activeTab === id ? 'bg-primary text-background' : 'text-muted hover:text-text hover:bg-muted/10'}
+          ${highlight ? 'shadow-[0_0_15px_rgba(122,162,247,0.5)] border border-primary/50 text-primary bg-primary/10' : ''}
         `}
             title={label}
         >
-            <Icon size={24} />
+            <Icon size={24} className={highlight ? 'animate-pulse' : ''} />
             <span className="absolute left-14 bg-surface px-2 py-1 rounded text-xs text-text border border-border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
                 {label}
             </span>
@@ -47,7 +57,14 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpen, onSave, onMinify, onL
                     <img src="/logo.png" alt="JSONMap Logo" className="w-full h-full object-cover" />
                 </button>
                 {onOpen && <NavItem Icon={FolderOpen} label="Open File" onClick={onOpen} />}
-                {onSave && <NavItem Icon={Save} label="Save File" onClick={onSave} />}
+                {onSave && (
+                    <NavItem
+                        Icon={Save}
+                        label={hasUnsavedChanges ? "Save Changes (Unsaved)" : "Save File"}
+                        onClick={onSave}
+                        highlight={hasUnsavedChanges}
+                    />
+                )}
                 {onMinify && <NavItem Icon={Minimize2} label="Minify/Compact" onClick={onMinify} />}
                 <div className="w-8 h-[1px] bg-border my-2" />
             </div>

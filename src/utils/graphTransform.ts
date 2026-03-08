@@ -36,7 +36,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
 let nodeId = 0;
 const getNextId = () => `n_${nodeId++}`;
-const MAX_NODES = 300;
+const MAX_NODES = 500;
 const MAX_CHILDREN = 50;
 
 export const jsonToGraph = (data: any) => {
@@ -45,7 +45,7 @@ export const jsonToGraph = (data: any) => {
     const edges: Edge[] = [];
     let truncated = false;
 
-    const traverse = (obj: any, parentId?: string, label?: string) => {
+    const traverse = (obj: any, parentId?: string, label?: string, path: (string | number)[] = []) => {
         if (nodeId >= MAX_NODES) {
             truncated = true;
             return;
@@ -67,9 +67,14 @@ export const jsonToGraph = (data: any) => {
 
         nodes.push({
             id,
-            data: { label: displayLabel },
+            data: {
+                label: displayLabel,
+                path,
+                type,
+                value: obj
+            },
             position: { x: 0, y: 0 },
-            type: 'default',
+            type: ['string', 'number', 'boolean'].includes(type) ? 'editable' : 'default',
         });
 
         if (parentId) {
@@ -91,7 +96,7 @@ export const jsonToGraph = (data: any) => {
                     truncated = true;
                     break;
                 }
-                traverse(value, id, key);
+                traverse(value, id, key, [...path, key]);
                 childrenCount++;
             }
         } else if (type === 'array') {
@@ -101,7 +106,7 @@ export const jsonToGraph = (data: any) => {
                     truncated = true;
                     break;
                 }
-                traverse(obj[i], id, `[${i}]`);
+                traverse(obj[i], id, `[${i}]`, [...path, i]);
             }
         }
     };

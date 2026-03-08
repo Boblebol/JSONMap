@@ -14,6 +14,7 @@ import { HelpPanel } from './components/Help/HelpPanel';
 import { ShortcutOverlay } from './components/Help/ShortcutOverlay';
 import { SchemaPanel } from './components/Tools/SchemaPanel';
 import { AboutModal } from './components/About/AboutModal';
+import { updateValueByPath } from './utils/jsonUtils';
 
 const SAMPLE_JSON = `{
   "name": "JSONMap",
@@ -32,12 +33,15 @@ const SAMPLE_JSON = `{
 function App() {
   const [activeTab, setActiveTab] = useState('visualizer');
   const [content, setContent] = useState(SAMPLE_JSON);
+  const [lastSavedContent, setLastSavedContent] = useState(SAMPLE_JSON);
   const [format, setFormat] = useState('json');
   const [graphData, setGraphData] = useState<{ nodes: Node[], edges: Edge[], truncated?: boolean }>({ nodes: [], edges: [] });
   const [error, setError] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [isGraphStale, setIsGraphStale] = useState(true);
+
+  const isDirty = content !== lastSavedContent;
 
   // Use refs for handlers that need latest state without re-triggering effects
   const contentRef = useRef(content);
@@ -55,6 +59,10 @@ function App() {
       }
       if (e.key === 'Escape') {
         setShowShortcuts(false);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveFile();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -122,6 +130,7 @@ function App() {
       const result = await tauriApi.openFile();
       if (result) {
         setContent(result.content);
+        setLastSavedContent(result.content);
         setFormat(result.format);
         if (window.__TAURI__) {
           await tauriApi.addRecentFile(result.path);
@@ -135,8 +144,10 @@ function App() {
 
   const handleSaveFile = useCallback(async () => {
     try {
-      const path = await tauriApi.saveFile(contentRef.current);
+      const currentContent = contentRef.current;
+      const path = await tauriApi.saveFile(currentContent);
       if (path && window.__TAURI__) {
+        setLastSavedContent(currentContent);
         await tauriApi.showNotification("File Saved", `Successfully saved to ${path}`);
       }
     } catch (e: any) {
@@ -144,6 +155,21 @@ function App() {
       setError("Failed to save file: " + e.message);
     }
   }, []);
+
+  const handleNodeUpdate = useCallback((path: (string | number)[], newValue: any) => {
+    try {
+      if (format !== 'json') {
+        setError("Graph editing is currently only supported for JSON format.");
+        return;
+      }
+      const data = JSON.parse(contentRef.current);
+      const updatedData = updateValueByPath(data, path, newValue);
+      setContent(JSON.stringify(updatedData, null, 2));
+    } catch (e: any) {
+      console.error("Node update error:", e);
+      setError("Failed to update JSON from graph: " + e.message);
+    }
+  }, [format]);
 
   const handleMinify = () => {
     try {
@@ -224,6 +250,7 @@ function App() {
         onSave={window.__TAURI__ ? handleSaveFile : undefined}
         onMinify={handleMinify}
         onLogoClick={() => setShowAbout(true)}
+        hasUnsavedChanges={isDirty}
       />
 
       {content.length > 1024 * 1024 && (
@@ -287,6 +314,7 @@ function App() {
                 initialNodes={graphData.nodes}
                 initialEdges={graphData.edges}
                 isTruncated={graphData.truncated}
+                onNodeUpdate={handleNodeUpdate}
               />
             </div>
           </>

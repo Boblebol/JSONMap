@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -12,25 +12,39 @@ import { toPng, toJpeg, toSvg } from 'html-to-image';
 import download from 'downloadjs';
 import { Image, Download, FileImage, Info, Check, Settings2 } from 'lucide-react';
 import { tauriApi } from '../../utils/tauri';
+import { EditableNode } from './EditableNode';
 import 'reactflow/dist/style.css';
 
 interface GraphViewProps {
     initialNodes: Node[];
     initialEdges: Edge[];
     isTruncated?: boolean;
+    onNodeUpdate?: (path: (string | number)[], newValue: any) => void;
 }
 
-export const GraphView = ({ initialNodes, initialEdges, isTruncated }: GraphViewProps) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeUpdate }: GraphViewProps) => {
+    const nodeTypes = useMemo(() => ({ editable: EditableNode }), []);
+
+    const preparedNodes = useMemo(() =>
+        initialNodes.map(node => ({
+            ...node,
+            data: {
+                ...node.data,
+                onChange: onNodeUpdate
+            }
+        }))
+        , [initialNodes, onNodeUpdate]);
+
+    const [nodes, setNodes, onNodesChange] = useNodesState(preparedNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [exportQuality, setExportQuality] = useState(2);
     const [showExportOptions, setShowExportOptions] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        setNodes(initialNodes);
+        setNodes(preparedNodes);
         setEdges(initialEdges);
-    }, [initialNodes, initialEdges, setNodes, setEdges]);
+    }, [preparedNodes, initialEdges, setNodes, setEdges]);
 
     const exportImage = useCallback((format: 'png' | 'jpeg' | 'svg') => {
         if (ref.current === null) return;
@@ -114,6 +128,7 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated }: GraphView
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onNodeDoubleClick={onNodeDoubleClick}
+                nodeTypes={nodeTypes}
                 fitView
                 className="text-text"
             >
