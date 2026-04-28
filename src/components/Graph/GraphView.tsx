@@ -15,6 +15,7 @@ import { Image, Download, FileImage, Info, Check, Settings2, Search, LocateFixed
 import { tauriApi } from '../../utils/tauri';
 import { EditableNode } from './EditableNode';
 import { findGraphSearchMatches } from '../../utils/graphSearch';
+import { getDescendantNodeIds, setGraphBranchVisibility } from '../../utils/graphBranch';
 import 'reactflow/dist/style.css';
 
 interface GraphViewProps {
@@ -42,10 +43,16 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
     const [showExportOptions, setShowExportOptions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
     const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
     const ref = useRef<HTMLDivElement>(null);
     const searchMatches = useMemo(() => findGraphSearchMatches(nodes, searchQuery), [nodes, searchQuery]);
     const activeMatch = searchMatches[activeMatchIndex];
+    const selectedNode = useMemo(() => nodes.find(node => node.id === selectedNodeId), [nodes, selectedNodeId]);
+    const selectedNodeHasDescendants = useMemo(() => {
+        if (!selectedNodeId) return false;
+        return getDescendantNodeIds(edges, selectedNodeId).length > 0;
+    }, [edges, selectedNodeId]);
 
     useEffect(() => {
         setNodes(preparedNodes);
@@ -61,6 +68,12 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
             setActiveMatchIndex(0);
         }
     }, [activeMatchIndex, searchMatches.length]);
+
+    useEffect(() => {
+        if (selectedNodeId && !nodes.some(node => node.id === selectedNodeId)) {
+            setSelectedNodeId(null);
+        }
+    }, [nodes, selectedNodeId]);
 
     const exportImage = useCallback((format: 'png' | 'jpeg' | 'svg') => {
         if (ref.current === null) return;
@@ -109,6 +122,7 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
             ...currentNode,
             selected: currentNode.id === node.id,
         })));
+        setSelectedNodeId(node.id);
         onNodeSelect?.(node);
         flowInstance?.setCenter(
             node.position.x + (node.width ?? 200) / 2,
@@ -130,38 +144,30 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
         focusSearchResult();
     }, [focusSearchResult]);
 
+    const selectNode = useCallback((node: Node) => {
+        setSelectedNodeId(node.id);
+        setNodes(currentNodes => currentNodes.map(currentNode => ({
+            ...currentNode,
+            selected: currentNode.id === node.id,
+        })));
+        onNodeSelect?.(node);
+    }, [onNodeSelect, setNodes]);
+
+    const updateSelectedBranchVisibility = useCallback((hidden: boolean) => {
+        if (!selectedNodeId) return;
+
+        const updatedGraph = setGraphBranchVisibility(nodes, edges, selectedNodeId, hidden);
+        setNodes(updatedGraph.nodes);
+        setEdges(updatedGraph.edges);
+    }, [edges, nodes, selectedNodeId, setEdges, setNodes]);
+
     const onNodeDoubleClick = useCallback((_: any, node: Node) => {
-        const getDescendants = (nodeId: string, visited = new Set<string>()): string[] => {
-            if (visited.has(nodeId)) return [];
-            visited.add(nodeId);
-            const children = edges.filter(e => e.source === nodeId).map(e => e.target);
-            let descendants = [...children];
-            for (const childId of children) {
-                descendants = [...descendants, ...getDescendants(childId, visited)];
-            }
-            return descendants;
-        };
-
-        const descendants = getDescendants(node.id);
+        const descendants = getDescendantNodeIds(edges, node.id);
         const isCurrentlyExpanded = descendants.some(id => !nodes.find(n => n.id === id)?.hidden);
+        const updatedGraph = setGraphBranchVisibility(nodes, edges, node.id, isCurrentlyExpanded);
 
-        setNodes((nds) =>
-            nds.map((n) => {
-                if (descendants.includes(n.id)) return { ...n, hidden: isCurrentlyExpanded };
-                return n;
-            })
-        );
-
-        setEdges((eds) =>
-            eds.map((e) => {
-                if (descendants.includes(e.target) || descendants.includes(e.source)) {
-                    const targetHidden = descendants.includes(e.target) && isCurrentlyExpanded;
-                    const sourceHidden = descendants.includes(e.source) && isCurrentlyExpanded;
-                    return { ...e, hidden: targetHidden || sourceHidden };
-                }
-                return e;
-            })
-        );
+        setNodes(updatedGraph.nodes);
+        setEdges(updatedGraph.edges);
     }, [nodes, edges, setNodes, setEdges]);
 
     return (
@@ -171,7 +177,7 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                onNodeClick={(_, node) => onNodeSelect?.(node)}
+                onNodeClick={(_, node) => selectNode(node)}
                 onNodeDoubleClick={onNodeDoubleClick}
                 nodeTypes={nodeTypes}
                 onInit={setFlowInstance}
@@ -223,6 +229,29 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
                             <LocateFixed size={13} /> Focus
                         </button>
                     </form>
+                    <div className="bg-surface/90 backdrop-blur p-2 rounded-lg border border-border flex items-center gap-2 shadow-sm">
+                        <span className="max-w-36 truncate text-[10px] text-muted">
+                            {selectedNode ? String(selectedNode.data?.label ?? selectedNode.id) : 'No node selected'}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => updateSelectedBranchVisibility(true)}
+                            disabled={!selectedNodeHasDescendants}
+                            aria-label="Collapse selected branch"
+                            className="px-2 py-1.5 rounded border border-border text-xs text-text hover:bg-muted/10 disabled:opacity-40"
+                        >
+                            Collapse
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => updateSelectedBranchVisibility(false)}
+                            disabled={!selectedNodeHasDescendants}
+                            aria-label="Expand selected branch"
+                            className="px-2 py-1.5 rounded border border-border text-xs text-text hover:bg-muted/10 disabled:opacity-40"
+                        >
+                            Expand
+                        </button>
+                    </div>
                 </Panel>
 
                 <Panel position="top-right" className="flex flex-col gap-2 items-end">
