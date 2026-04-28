@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react';
 import type { WorkspaceDocument } from '../../utils/documentWorkspace';
 import { Download, GitCompare, History, RotateCcw, Save } from 'lucide-react';
+import { createLineDiffPreview } from '../../utils/contentDiff';
 
 interface VersionPanelProps {
     document: WorkspaceDocument | null;
@@ -17,7 +19,15 @@ export const VersionPanel = ({
     onExportSnapshot,
 }: VersionPanelProps) => {
     const snapshots = document?.snapshots ?? [];
+    const [baseSnapshotId, setBaseSnapshotId] = useState('');
+    const [compareSnapshotId, setCompareSnapshotId] = useState('');
     const diffLines = diffPreview.split('\n');
+    const baseSnapshot = snapshots.find(snapshot => snapshot.id === baseSnapshotId) ?? snapshots[0];
+    const compareSnapshot = snapshots.find(snapshot => snapshot.id === compareSnapshotId) ?? snapshots[1] ?? snapshots[0];
+    const snapshotCompareLines = useMemo(() => {
+        if (!baseSnapshot || !compareSnapshot) return [];
+        return createLineDiffPreview(baseSnapshot.content, compareSnapshot.content).split('\n');
+    }, [baseSnapshot, compareSnapshot]);
 
     return (
         <section className="border-t border-border bg-background flex flex-col min-h-0">
@@ -53,6 +63,52 @@ export const VersionPanel = ({
                     ))}
                 </div>
             </div>
+
+            {snapshots.length >= 2 && (
+                <div className="p-4 border-b border-border">
+                    <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted mb-3">
+                        <GitCompare size={12} /> Snapshot compare
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                        <label className="min-w-0">
+                            <span className="sr-only">Base snapshot</span>
+                            <select
+                                aria-label="Base snapshot"
+                                value={baseSnapshot?.id ?? ''}
+                                onChange={(event) => setBaseSnapshotId(event.target.value)}
+                                className="w-full min-w-0 bg-surface border border-border rounded px-2 py-1.5 text-xs text-text"
+                            >
+                                {snapshots.map(snapshot => (
+                                    <option key={snapshot.id} value={snapshot.id}>{snapshot.name}</option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="min-w-0">
+                            <span className="sr-only">Compare snapshot</span>
+                            <select
+                                aria-label="Compare snapshot"
+                                value={compareSnapshot?.id ?? ''}
+                                onChange={(event) => setCompareSnapshotId(event.target.value)}
+                                className="w-full min-w-0 bg-surface border border-border rounded px-2 py-1.5 text-xs text-text"
+                            >
+                                {snapshots.map(snapshot => (
+                                    <option key={snapshot.id} value={snapshot.id}>{snapshot.name}</option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
+                    <div className="rounded border border-border bg-surface p-2 max-h-28 overflow-y-auto font-mono text-[11px] leading-relaxed">
+                        {snapshotCompareLines.map((line, index) => (
+                            <div
+                                key={`${line}-${index}`}
+                                className={line.startsWith('+') ? 'text-[#9ece6a]' : line.startsWith('-') ? 'text-[#f7768e]' : 'text-muted'}
+                            >
+                                {line}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
                 {snapshots.length === 0 && (

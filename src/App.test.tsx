@@ -194,4 +194,33 @@ describe('App workspace', () => {
 
         expect(download).toHaveBeenCalledWith('{"name":"snapshot"}', 'payload-snapshot-1.json', 'application/json');
     });
+
+    it('compares two snapshots created from the active document', async () => {
+        const { container } = render(<App />);
+        const file = new File(['{"name":"before"}'], 'payload.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"name":"before"}');
+        });
+
+        fireEvent.change(screen.getByLabelText('active-document-editor'), { target: { value: '{"name":"first"}' } });
+        fireEvent.click(screen.getByText('Save snapshot'));
+        expect(await screen.findByText('Snapshot 1')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('active-document-editor'), { target: { value: '{"name":"second"}' } });
+        fireEvent.click(screen.getByText('Save snapshot'));
+
+        expect(await screen.findAllByText('Snapshot 2')).not.toHaveLength(0);
+        expect(screen.getByText('Snapshot compare')).toBeInTheDocument();
+        expect(screen.getByLabelText('Base snapshot')).toHaveDisplayValue('Snapshot 1');
+        expect(screen.getByLabelText('Compare snapshot')).toHaveDisplayValue('Snapshot 2');
+        expect(screen.getAllByText(/"name": "first"/)).not.toHaveLength(0);
+        expect(screen.getAllByText(/"name": "second"/)).not.toHaveLength(0);
+    });
 });
