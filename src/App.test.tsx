@@ -61,11 +61,14 @@ vi.mock('./components/Help/ShortcutOverlay', () => ({
 }));
 
 vi.mock('./components/Tools/CodeGenPanel', () => ({
-    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' }) => void }) => (
+    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' | 'python' }) => void }) => (
         <div>
             Code generation panel
             <button onClick={() => onCreateDocument?.('export interface Root {}', { name: 'Sample JSON.ts', format: 'typescript' })}>
                 Create TypeScript document
+            </button>
+            <button onClick={() => onCreateDocument?.('from dataclasses import dataclass', { name: 'Sample JSON.py', format: 'python' })}>
+                Create Python document
             </button>
         </div>
     ),
@@ -325,6 +328,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Sample JSON.ts')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('export interface Root {}');
+    });
+
+    it('adds generated Python dataclasses as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Code Generation'));
+        fireEvent.click(screen.getByText('Create Python document'));
+
+        expect(await screen.findByText('Sample JSON.py')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('from dataclasses import dataclass');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {

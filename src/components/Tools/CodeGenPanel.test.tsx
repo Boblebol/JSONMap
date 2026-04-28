@@ -4,7 +4,10 @@ import { CodeGenPanel } from './CodeGenPanel';
 
 // Mock quicktype-core
 vi.mock('quicktype-core', () => ({
-    quicktype: vi.fn(() => Promise.resolve({ lines: ['interface Root {', '  name: string;', '}'] })),
+    quicktype: vi.fn(({ lang }: { lang: string }) => Promise.resolve(lang === 'python'
+        ? { lines: ['from dataclasses import dataclass', '', '@dataclass', 'class Root:', '    name: str'] }
+        : { lines: ['interface Root {', '  name: string;', '}'] }
+    )),
     InputData: class {
         addInput = vi.fn();
     },
@@ -72,6 +75,31 @@ describe('CodeGenPanel', () => {
         expect(onCreateDocument).toHaveBeenCalledWith('interface Root {\n  name: string;\n}', {
             format: 'typescript',
             name: 'payload.ts',
+        });
+    });
+
+    it('creates a Python dataclass workspace document from generated code', async () => {
+        const onCreateDocument = vi.fn();
+
+        render(
+            <CodeGenPanel
+                content='{"name":"test"}'
+                sourceName="payload.json"
+                onCreateDocument={onCreateDocument}
+            />
+        );
+
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'python' } });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('code-editor')).toHaveTextContent('@dataclass');
+        });
+
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(onCreateDocument).toHaveBeenCalledWith('from dataclasses import dataclass\n\n@dataclass\nclass Root:\n    name: str', {
+            format: 'python',
+            name: 'payload.py',
         });
     });
 });
