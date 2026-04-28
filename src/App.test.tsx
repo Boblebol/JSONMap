@@ -61,19 +61,19 @@ vi.mock('./components/Help/ShortcutOverlay', () => ({
 }));
 
 vi.mock('./components/Tools/CodeGenPanel', () => ({
-    CodeGenPanel: () => <div />,
+    CodeGenPanel: () => <div>Code generation panel</div>,
 }));
 
 vi.mock('./components/Tools/SchemaPanel', () => ({
-    SchemaPanel: () => <div />,
+    SchemaPanel: () => <div>Schema panel</div>,
 }));
 
 vi.mock('./components/Tools/ToolsPanel', () => ({
-    ToolsPanel: () => <div />,
+    ToolsPanel: () => <div>Tools panel</div>,
 }));
 
 vi.mock('./components/Converter/ConverterPanel', () => ({
-    ConverterPanel: () => <div />,
+    ConverterPanel: () => <div>Converter panel</div>,
 }));
 
 vi.mock('./components/Settings/SettingsPanel', () => ({
@@ -232,6 +232,19 @@ describe('App workspace', () => {
             'payload-settings.json',
             'application/json'
         );
+    });
+
+    it('opens developer tools from the drawer and routes to the selected panel', () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+
+        expect(screen.getByRole('dialog', { name: 'Developer tools' })).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('JQ / JSONPath'));
+
+        expect(screen.getByText('Tools panel')).toBeInTheDocument();
+        expect(screen.queryByRole('dialog', { name: 'Developer tools' })).not.toBeInTheDocument();
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {

@@ -16,6 +16,7 @@ import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { HelpPanel } from './components/Help/HelpPanel';
 import { ShortcutOverlay } from './components/Help/ShortcutOverlay';
 import { SchemaPanel } from './components/Tools/SchemaPanel';
+import { DeveloperToolsDrawer, type DeveloperToolId } from './components/Tools/DeveloperToolsDrawer';
 import { AboutModal } from './components/About/AboutModal';
 import { formatJsonPath, getValueByPath, updateValueByPath } from './utils/jsonUtils';
 import { createLineDiffPreview } from './utils/contentDiff';
@@ -109,6 +110,7 @@ function App() {
   const [isGraphStale, setIsGraphStale] = useState(true);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [isDeveloperToolsOpen, setIsDeveloperToolsOpen] = useState(false);
 
   const activeDocument = useMemo(() => getActiveDocument(workspace), [workspace]);
   const content = activeDocument?.currentContent ?? '';
@@ -174,6 +176,16 @@ function App() {
         return { ...document, format: nextFormat };
       })
     }));
+  }, []);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    setIsDeveloperToolsOpen(false);
+  }, []);
+
+  const handleDeveloperToolSelect = useCallback((tool: DeveloperToolId) => {
+    setActiveTab(tool);
+    setIsDeveloperToolsOpen(false);
   }, []);
 
   const addImportedDocuments = useCallback((documents: WorkspaceDocument[]) => {
@@ -525,12 +537,21 @@ function App() {
 
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         onOpen={window.__TAURI__ ? handleOpenFile : undefined}
         onSave={handleSaveFile}
         onMinify={handleMinify}
         onLogoClick={() => setShowAbout(true)}
+        onDeveloperToolsToggle={() => setIsDeveloperToolsOpen(isOpen => !isOpen)}
+        isDeveloperToolsActive={isDeveloperToolsOpen || ['tools', 'converter', 'codegen', 'schema'].includes(activeTab)}
         hasUnsavedChanges={isDirty}
+      />
+
+      <DeveloperToolsDrawer
+        isOpen={isDeveloperToolsOpen}
+        activeTool={activeTab}
+        onClose={() => setIsDeveloperToolsOpen(false)}
+        onSelectTool={handleDeveloperToolSelect}
       />
 
       {content.length > 1024 * 1024 && (

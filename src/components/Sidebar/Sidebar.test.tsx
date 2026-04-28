@@ -8,20 +8,32 @@ describe('Sidebar', () => {
         render(<Sidebar activeTab="visualizer" setActiveTab={setActiveTab} />);
 
         expect(screen.getByTitle('Visualizer')).toBeInTheDocument();
-        expect(screen.getByTitle('Code Generation')).toBeInTheDocument();
-        expect(screen.getByTitle('Converter')).toBeInTheDocument();
-        expect(screen.getByTitle('Schema Tools')).toBeInTheDocument();
+        expect(screen.getByTitle('Developer Tools')).toBeInTheDocument();
         expect(screen.getByTitle('Settings')).toBeInTheDocument();
+
+        expect(screen.queryByTitle('Code Generation')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Converter')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Schema Tools')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Tools (jq, JWT)')).not.toBeInTheDocument();
     });
 
     it('calls setActiveTab when a navigation item is clicked', () => {
         const setActiveTab = vi.fn();
         render(<Sidebar activeTab="visualizer" setActiveTab={setActiveTab} />);
 
-        const codegenButton = screen.getByTitle('Code Generation');
-        fireEvent.click(codegenButton);
+        const helpButton = screen.getByTitle('Help & Shortcuts');
+        fireEvent.click(helpButton);
 
-        expect(setActiveTab).toHaveBeenCalledWith('codegen');
+        expect(setActiveTab).toHaveBeenCalledWith('help');
+    });
+
+    it('calls onDeveloperToolsToggle when developer tools is clicked', () => {
+        const onDeveloperToolsToggle = vi.fn();
+        render(<Sidebar activeTab="visualizer" setActiveTab={() => { }} onDeveloperToolsToggle={onDeveloperToolsToggle} />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+
+        expect(onDeveloperToolsToggle).toHaveBeenCalled();
     });
 
     it('calls onOpen when open button is clicked', () => {
@@ -35,10 +47,10 @@ describe('Sidebar', () => {
     });
 
     it('highlights the active tab', () => {
-        render(<Sidebar activeTab="codegen" setActiveTab={() => { }} />);
+        render(<Sidebar activeTab="help" setActiveTab={() => { }} />);
 
-        const codegenButton = screen.getByTitle('Code Generation');
-        expect(codegenButton.className).toContain('bg-primary');
+        const helpButton = screen.getByTitle('Help & Shortcuts');
+        expect(helpButton.className).toContain('bg-primary');
 
         const visualizerButton = screen.getByTitle('Visualizer');
         expect(visualizerButton.className).not.toContain('bg-primary');

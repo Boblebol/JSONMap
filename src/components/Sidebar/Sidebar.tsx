@@ -1,15 +1,12 @@
 import { ComponentType } from 'react';
 import {
     Network,
-    FileCode,
     Settings,
-    Wand2,
-    ShieldCheck,
     FolderOpen,
     Save,
     Minimize2,
     HelpCircle,
-    Microscope
+    Wrench
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,6 +16,8 @@ interface SidebarProps {
     onSave?: () => void;
     onMinify?: () => void;
     onLogoClick?: () => void;
+    onDeveloperToolsToggle?: () => void;
+    isDeveloperToolsActive?: boolean;
     hasUnsavedChanges?: boolean;
 }
 
@@ -29,13 +28,15 @@ export const Sidebar = ({
     onSave,
     onMinify,
     onLogoClick,
+    onDeveloperToolsToggle,
+    isDeveloperToolsActive = false,
     hasUnsavedChanges = false
 }: SidebarProps) => {
-    const NavItem = ({ id, Icon, label, onClick, highlight }: { id?: string, Icon: ComponentType<any>, label: string, onClick?: () => void, highlight?: boolean }) => (
+    const NavItem = ({ id, Icon, label, onClick, highlight, active }: { id?: string, Icon: ComponentType<any>, label: string, onClick?: () => void, highlight?: boolean, active?: boolean }) => (
         <button
             onClick={onClick || (() => id && setActiveTab(id))}
             className={`p-3 rounded-xl transition-all mb-2 tooltip-trigger group relative
-          ${activeTab === id ? 'bg-primary text-background' : 'text-muted hover:text-text hover:bg-muted/10'}
+          ${(active ?? activeTab === id) ? 'bg-primary text-background' : 'text-muted hover:text-text hover:bg-muted/10'}
           ${highlight ? 'shadow-[0_0_15px_rgba(122,162,247,0.5)] border border-primary/50 text-primary bg-primary/10' : ''}
         `}
             title={label}
@@ -70,10 +71,12 @@ export const Sidebar = ({
             </div>
 
             <NavItem id="visualizer" Icon={Network} label="Visualizer" />
-            <NavItem id="codegen" Icon={FileCode} label="Code Generation" />
-            <NavItem id="converter" Icon={Wand2} label="Converter" />
-            <NavItem id="schema" Icon={Microscope} label="Schema Tools" />
-            <NavItem id="tools" Icon={ShieldCheck} label="Tools (jq, JWT)" />
+            <NavItem
+                Icon={Wrench}
+                label="Developer Tools"
+                onClick={onDeveloperToolsToggle}
+                active={isDeveloperToolsActive}
+            />
 
             <div className="mt-auto flex flex-col items-center">
                 <NavItem id="help" Icon={HelpCircle} label="Help & Shortcuts" />
