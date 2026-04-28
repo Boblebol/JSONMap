@@ -1,16 +1,45 @@
-import { useState } from 'react';
-import { ArrowRight, Copy, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Copy, Check, FilePlus2 } from 'lucide-react';
 import { tauriApi, FileFormat } from '../../utils/tauri';
 import { CodeEditor } from '../Editor/CodeEditor';
 
-export const ConverterPanel = () => {
-    const [sourceContent, setSourceContent] = useState('');
+interface ConverterPanelProps {
+    content?: string;
+    sourceFormat?: FileFormat;
+    sourceName?: string;
+    onCreateDocument?: (content: string, options: { name: string; format: FileFormat }) => void;
+}
+
+const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv)$/i, '');
+
+const getConvertedDocumentName = (sourceName: string | undefined, targetFormat: FileFormat) => {
+    const baseName = sourceName ? stripKnownExtension(sourceName) : 'Converted document';
+    return `${baseName}.${targetFormat}`;
+};
+
+export const ConverterPanel = ({
+    content,
+    sourceFormat: initialSourceFormat = 'json',
+    sourceName,
+    onCreateDocument,
+}: ConverterPanelProps) => {
+    const [sourceContent, setSourceContent] = useState(content ?? '');
     const [targetContent, setTargetContent] = useState('');
-    const [sourceFormat, setSourceFormat] = useState<FileFormat>('json');
+    const [sourceFormat, setSourceFormat] = useState<FileFormat>(initialSourceFormat);
     const [targetFormat, setTargetFormat] = useState<FileFormat>('yaml');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        if (content !== undefined) {
+            setSourceContent(content);
+        }
+    }, [content]);
+
+    useEffect(() => {
+        setSourceFormat(initialSourceFormat);
+    }, [initialSourceFormat]);
 
     const handleConvert = async () => {
         setLoading(true);
@@ -33,6 +62,15 @@ export const ConverterPanel = () => {
         } catch (e) {
             console.error('Failed to copy', e);
         }
+    };
+
+    const createConvertedDocument = () => {
+        if (!targetContent || !onCreateDocument) return;
+
+        onCreateDocument(targetContent, {
+            format: targetFormat,
+            name: getConvertedDocumentName(sourceName, targetFormat),
+        });
     };
 
     return (
@@ -101,6 +139,15 @@ export const ConverterPanel = () => {
                         >
                             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
                         </button>
+                        {onCreateDocument && (
+                            <button
+                                onClick={createConvertedDocument}
+                                disabled={!targetContent}
+                                className="rounded bg-primary px-2 py-1 text-xs font-bold text-background hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+                            >
+                                <FilePlus2 size={14} /> Create document
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="flex-1 relative bg-[#1e1e2e]">

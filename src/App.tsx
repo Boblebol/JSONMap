@@ -713,7 +713,12 @@ function App() {
         )}
 
         {activeTab === 'converter' && (
-          <ConverterPanel />
+          <ConverterPanel
+            content={content}
+            sourceFormat={format}
+            sourceName={activeDocument?.name}
+            onCreateDocument={handleCreateToolDocument}
+          />
         )}
 
         {activeTab === 'settings' && (

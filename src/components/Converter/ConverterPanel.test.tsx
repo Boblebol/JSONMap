@@ -49,6 +49,31 @@ describe('ConverterPanel', () => {
         });
     });
 
+    it('creates a workspace document from converted active content', async () => {
+        const onCreateDocument = vi.fn();
+        vi.mocked(tauriApi.convertFormat).mockResolvedValue('name: test');
+
+        render(
+            <ConverterPanel
+                content='{"name":"test"}'
+                sourceFormat="json"
+                sourceName="payload.json"
+                onCreateDocument={onCreateDocument}
+            />
+        );
+
+        fireEvent.click(screen.getByTitle('Convert'));
+
+        expect(await screen.findByText('Create document')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(tauriApi.convertFormat).toHaveBeenCalledWith('{"name":"test"}', 'json', 'yaml');
+        expect(onCreateDocument).toHaveBeenCalledWith('name: test', {
+            format: 'yaml',
+            name: 'payload.yaml',
+        });
+    });
+
     it('shows error if conversion fails', async () => {
         vi.mocked(tauriApi.convertFormat).mockRejectedValue(new Error('Invalid JSON'));
 

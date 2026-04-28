@@ -94,7 +94,14 @@ vi.mock('./components/Tools/ToolsPanel', () => ({
 }));
 
 vi.mock('./components/Converter/ConverterPanel', () => ({
-    ConverterPanel: () => <div>Converter panel</div>,
+    ConverterPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'yaml' }) => void }) => (
+        <div>
+            Converter panel
+            <button onClick={() => onCreateDocument?.('name: JSONMap', { name: 'Sample JSON.yaml', format: 'yaml' })}>
+                Create converted document
+            </button>
+        </div>
+    ),
 }));
 
 vi.mock('./components/Settings/SettingsPanel', () => ({
@@ -289,6 +296,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Anonymized data')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{\n  "email": "REDACTED"\n}');
+    });
+
+    it('adds converter output as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Converter'));
+        fireEvent.click(screen.getByText('Create converted document'));
+
+        expect(await screen.findByText('Sample JSON.yaml')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('name: JSONMap');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {
