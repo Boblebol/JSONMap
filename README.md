@@ -4,7 +4,7 @@
   <img src="https://github.com/Boblebol/JSONMap/raw/main/src-tauri/icons/128x128@2x.png" width="128" alt="JSONMap Logo" />
   <h1>JSONMap</h1>
   <p>
-    <strong>A high-performance, native macOS visualizer for JSON, YAML, XML, TOML, and CSV.</strong>
+    <strong>A local-first desktop workspace for visualizing, editing, versioning, converting, and generating code from structured data.</strong>
   </p>
 
   [![CI](https://github.com/Boblebol/JSONMap/actions/workflows/ci.yml/badge.svg)](https://github.com/Boblebol/JSONMap/actions/workflows/ci.yml)
@@ -26,22 +26,41 @@
 
 <br />
 
-> **JSONMap** is a developer-first tool designed to make navigating complex data structures intuitive and fast. Built with **Tauri (Rust)** and **React**, it combines native performance with a modern, beautiful UI.
+> **JSONMap** is a local-first structured data workspace designed for both non-technical users and developers. Drop a file, explore it as a graph, edit safely, keep snapshots, convert formats, and generate typed descriptors without sending private data to an online service.
 
 ## ✨ Features
 
-- **🚀 Multi-Format Support**: Instantly parse and visualize **JSON**, **YAML**, **XML**, **TOML**, and **CSV**.
-- **🕸️ Interactive Graph**: Navigate deep hierarchies with a zoomable, node-based graph view.
+- **🚀 Multi-Format Support**: Open, edit, convert, and export **JSON**, **YAML**, **XML**, **TOML**, and **CSV**.
+- **📂 In-Memory Workspace**: Drag and drop local files, switch between documents, reset to the original version, and export modified copies.
+- **🕸️ Interactive Graph**: Navigate deep hierarchies with a zoomable graph, search nodes, and expand or collapse branches.
+- **✍️ Safe Editing**: Edit JSON scalar values from the inspector, copy JSONPath values, copy or export subtrees, and keep raw content visible.
+- **🧾 Versioning and Diff**: Create named snapshots, restore previous versions, export snapshots, and compare changes.
 - **🔒 Privacy First**: All processing happens **locally**. Your data never leaves your machine.
-- **🛠️ Power Tools**:
-    - **JQ Querying**: Filter and transform data using JQ syntax.
+- **🛠️ Developer Tools**:
+    - **JQ and JSONPath**: Query the active document, copy results, or create result documents.
+    - **Format Conversion**: Convert the active document into JSON, YAML, TOML, XML, or CSV.
     - **JWT Decoder**: Inspect tokens without external websites.
-    - **Anonymizer**: Mask PII/sensitive data with one click.
-    - **Code Generation**: Generate TypeScript, Go, Rust, and Python types from your JSON.
+    - **Anonymizer**: Mask PII/sensitive data with one click and save a redacted snapshot.
+    - **JSON Schema**: Infer schemas, validate the active JSON, and create `.schema.json` workspace documents.
+    - **Code Generation**: Create TypeScript, Python dataclass, Pydantic v2, Go, and Rust serde documents from JSON.
 - **🎨 Native Experience**:
     - Dark/Light mode support.
     - Native macOS vibrancy and blur effects.
     - Keyboard shortcuts for efficiency.
+
+## Current Roadmap Status
+
+The v1.7 code generation milestone is implemented:
+
+- TypeScript interfaces as `.ts` documents.
+- Python dataclasses as `.py` documents.
+- Pydantic v2 models as `.pydantic.py` documents.
+- Go structs as `.go` documents.
+- Rust serde structs as `.rs` documents.
+- JSON Schema inference and validation as `.schema.json` documents.
+- Stable fixture snapshots for generated TypeScript, Python, Pydantic, Go, and Rust output.
+
+Next focus: v1.8 performance work, starting with moving parsing off the React render path and improving large-file graph rendering.
 
 ## 📸 Screenshots
 
@@ -81,9 +100,31 @@ pnpm install
 # Run in development mode
 pnpm tauri dev
 
+# Run the web shell only
+pnpm run dev
+
+# Run frontend tests
+pnpm test --run
+
+# Run backend tests
+cd src-tauri
+cargo test --locked
+
 # Build for production
 pnpm tauri build
 ```
+
+## Verification
+
+Before opening a pull request or cutting a release candidate, run:
+
+```bash
+pnpm test --run
+pnpm run build
+cd src-tauri && cargo test --locked
+```
+
+The current frontend build emits a Vite chunk-size warning because Quicktype is bundled for in-app code generation. That warning is tracked as future performance work; it is not currently a build failure.
 
 ## 🤝 Contributing
 

@@ -21,8 +21,8 @@ This project and everyone participating in it is governed by the [JSONMap Code o
 
 1. Fork the repo and create your branch from `main`.
 2. If you've added code that should be tested, add tests.
-3. Ensure the test suite passes (`pnpm test` and `cargo test`).
-4. Make sure your code lints.
+3. Ensure the test suite passes (`pnpm test --run`, `pnpm run build`, and `cargo test --locked` from `src-tauri`).
+4. Keep changes scoped to one ticket or concern.
 5. Issue that pull request!
 
 ## Development Setup
@@ -45,6 +45,14 @@ pnpm install
 
 # Run in development mode
 pnpm tauri dev
+
+# Run frontend checks
+pnpm test --run
+pnpm run build
+
+# Run backend checks
+cd src-tauri
+cargo test --locked
 ```
 
 ## Style Guide
@@ -53,5 +61,7 @@ pnpm tauri dev
 - Use Tailwind CSS for styling.
 - Use Rust for backend commands.
 - Follow existing patterns in the codebase.
+- Prefer local-first workflows; do not add network processing for user data without explicit product discussion.
+- For code generation changes, update the fixture snapshots under `src/utils/__fixtures__/codegen/`.
 
 Thank you for contributing!
