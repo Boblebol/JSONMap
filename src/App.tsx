@@ -708,6 +708,7 @@ function App() {
             setContent={(nextContent) => setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, nextContent))}
             setFormat={handleFormatChange}
             onCreateDocument={handleCreateToolDocument}
+            onCreateSnapshot={handleCreateSnapshot}
           />
         )}
 

@@ -167,4 +167,39 @@ describe('ToolsPanel', () => {
             name: 'JWT Decode.json',
         });
     });
+
+    it('anonymizes the active JSON document and saves it as a named snapshot', async () => {
+        const setContent = vi.fn();
+        const onCreateSnapshot = vi.fn();
+        vi.mocked(tauriApi.anonymizeData).mockResolvedValue({
+            email: 'REDACTED',
+            nested: {
+                phone: 'REDACTED',
+            },
+        });
+
+        render(
+            <ToolsPanel
+                content='{"email":"ada@example.com","nested":{"phone":"+33123456789"}}'
+                setContent={setContent}
+                setFormat={() => { }}
+                onCreateSnapshot={onCreateSnapshot}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Anonymize'));
+        fireEvent.click(screen.getByText('Run'));
+
+        await waitFor(() => {
+            expect(tauriApi.anonymizeData).toHaveBeenCalledWith({
+                email: 'ada@example.com',
+                nested: {
+                    phone: '+33123456789',
+                },
+            });
+        });
+
+        expect(setContent).toHaveBeenCalledWith('{\n  "email": "REDACTED",\n  "nested": {\n    "phone": "REDACTED"\n  }\n}');
+        expect(onCreateSnapshot).toHaveBeenCalledWith('Anonymized data');
+    });
 });

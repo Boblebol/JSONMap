@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JQ result actions to copy query output and create it as a selected in-memory JSON document.
 - JSONPath result actions to copy query output and create it as a selected in-memory JSON document.
 - JWT decoder input for pasted tokens with copy and create-document actions for decoded output.
+- Anonymizer workflow that saves the redacted document as a named snapshot.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed

@@ -9,6 +9,7 @@ interface ToolsPanelProps {
     setContent: (content: string) => void;
     setFormat: (format: string) => void;
     onCreateDocument?: (content: string, options: { name: string; format: FileFormat }) => void;
+    onCreateSnapshot?: (name?: string) => void;
 }
 
 const serializeJsonResult = (value: unknown) => {
@@ -21,7 +22,7 @@ interface QueryResultDocument {
     name: string;
 }
 
-export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }: ToolsPanelProps) => {
+export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument, onCreateSnapshot }: ToolsPanelProps) => {
     const [tool, setTool] = useState<'format' | 'jq' | 'jsonpath' | 'jwt' | 'anonymize' | 'url'>('format');
     const [input, setInput] = useState('');
     const [result, setResult] = useState('');
@@ -109,6 +110,7 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
         try {
             const res = await tauriApi.anonymizeData(JSON.parse(content));
             setContent(JSON.stringify(res, null, 2));
+            onCreateSnapshot?.('Anonymized data');
             setResult("Data anonymized successfully.");
         } catch (e: any) {
             setResult("Anonymize Error: " + e.toString());

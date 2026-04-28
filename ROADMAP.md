@@ -279,7 +279,7 @@ Tickets use the following format:
 | JM-036 | feature | P0 | Add JQ tool for active document | JQ results can be viewed, copied, and created as a selected in-memory JSON document. |
 | JM-037 | feature | P0 | Add JSONPath tool for active document | JSONPath results can be viewed, copied, and created as a selected in-memory JSON document. |
 | JM-038 | feature | P1 | Add JWT decoder | Users can decode a pasted token and copy or create a selected in-memory JSON document from the decoded output. |
-| JM-039 | feature | P1 | Add anonymizer | Users can anonymize sensitive fields and save as a version. |
+| JM-039 | feature | P1 | Add anonymizer | Users can anonymize sensitive fields and automatically save the redacted document as a named snapshot. |
 | JM-040 | feature | P1 | Copy JSON path | Users can copy the selected node path as JSONPath from the inspector. |
 | JM-041 | feature | P1 | Copy subtree | Users can copy or export the selected branch as formatted JSON. |
 
