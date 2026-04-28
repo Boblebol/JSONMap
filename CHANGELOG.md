@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developer tools actions for JSON validation, formatting, beautifying, and minifying.
 - JQ result actions to copy query output and create it as a selected in-memory JSON document.
 - JSONPath result actions to copy query output and create it as a selected in-memory JSON document.
+- JWT decoder input for pasted tokens with copy and create-document actions for decoded output.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed

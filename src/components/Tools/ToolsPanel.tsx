@@ -87,14 +87,18 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
         }
     };
 
-    const decodeJwt = () => {
+    const decodeJwt = async () => {
         setQueryResultDocument(null);
         try {
-            const parts = content.split('.');
-            if (parts.length !== 3) throw new Error("Invalid JWT format");
-            const payload = JSON.parse(atob(parts[1]));
-            const header = JSON.parse(atob(parts[0]));
-            setResult(JSON.stringify({ header, payload }, null, 2));
+            const token = input.trim() || content.trim();
+            const decoded = await tauriApi.decodeJwt(token);
+            const serialized = serializeJsonResult(decoded);
+
+            setResult(serialized);
+            setQueryResultDocument({
+                content: serialized,
+                name: 'JWT Decode.json',
+            });
         } catch (e: any) {
             setResult("JWT Error: " + e.toString());
         }
@@ -301,7 +305,7 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
                         <CodeEditor value={result} onChange={() => { }} language="json" />
                     </div>
 
-                    {(tool === 'jq' || tool === 'jsonpath') && queryResultDocument && (
+                    {(tool === 'jq' || tool === 'jsonpath' || tool === 'jwt') && queryResultDocument && (
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={copyQueryResult}

@@ -139,4 +139,32 @@ describe('ToolsPanel', () => {
             name: 'JSONPath Result.json',
         });
     });
+
+    it('decodes a pasted JWT and exposes the decoded payload as a new document', async () => {
+        const onCreateDocument = vi.fn();
+        const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMiLCJyb2xlIjoiYWRtaW4ifQ.signature';
+        vi.mocked(tauriApi.decodeJwt).mockResolvedValue({
+            header: { alg: 'HS256' },
+            payload: { sub: '123', role: 'admin' },
+        });
+
+        render(<ToolsPanel content="{}" setContent={() => { }} setFormat={() => { }} onCreateDocument={onCreateDocument} />);
+
+        fireEvent.click(screen.getByText('JWT Decoder'));
+        fireEvent.change(screen.getByLabelText('code-editor-text'), { target: { value: token } });
+        fireEvent.click(screen.getByText('Decode'));
+
+        expect(await screen.findByText('Copy result')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Copy result'));
+        fireEvent.click(screen.getByText('Create document'));
+
+        const decoded = '{\n  "header": {\n    "alg": "HS256"\n  },\n  "payload": {\n    "sub": "123",\n    "role": "admin"\n  }\n}';
+        expect(tauriApi.decodeJwt).toHaveBeenCalledWith(token);
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(decoded);
+        expect(onCreateDocument).toHaveBeenCalledWith(decoded, {
+            format: 'json',
+            name: 'JWT Decode.json',
+        });
+    });
 });
