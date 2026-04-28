@@ -117,4 +117,26 @@ describe('ToolsPanel', () => {
             expect(tauriApi.runJsonPath).toHaveBeenCalledWith('$.foo', { foo: 1 });
         });
     });
+
+    it('copies a JSONPath result and exposes it as a new document', async () => {
+        const onCreateDocument = vi.fn();
+        vi.mocked(tauriApi.runJsonPath).mockResolvedValue([{ foo: 1 }]);
+
+        render(<ToolsPanel content='{"items":[{"foo":1}]}' setContent={() => { }} setFormat={() => { }} onCreateDocument={onCreateDocument} />);
+
+        fireEvent.click(screen.getByText('JSONPath'));
+        fireEvent.change(screen.getByLabelText('code-editor-text'), { target: { value: '$.items[*]' } });
+        fireEvent.click(screen.getByText('Run'));
+
+        expect(await screen.findByText('Copy result')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Copy result'));
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('[\n  {\n    "foo": 1\n  }\n]');
+        expect(onCreateDocument).toHaveBeenCalledWith('[\n  {\n    "foo": 1\n  }\n]', {
+            format: 'json',
+            name: 'JSONPath Result.json',
+        });
+    });
 });

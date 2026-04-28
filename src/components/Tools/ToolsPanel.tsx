@@ -16,21 +16,26 @@ const serializeJsonResult = (value: unknown) => {
     return serialized === undefined ? String(value) : serialized;
 };
 
+interface QueryResultDocument {
+    content: string;
+    name: string;
+}
+
 export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }: ToolsPanelProps) => {
     const [tool, setTool] = useState<'format' | 'jq' | 'jsonpath' | 'jwt' | 'anonymize' | 'url'>('format');
     const [input, setInput] = useState('');
     const [result, setResult] = useState('');
-    const [jqResultContent, setJqResultContent] = useState<string | null>(null);
+    const [queryResultDocument, setQueryResultDocument] = useState<QueryResultDocument | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const selectTool = (nextTool: typeof tool) => {
         setTool(nextTool);
-        setJqResultContent(null);
+        setQueryResultDocument(null);
     };
 
     const handleImportUrl = async () => {
         setIsLoading(true);
-        setJqResultContent(null);
+        setQueryResultDocument(null);
         try {
             const data = await tauriApi.fetchUrl(input);
             setContent(data);
@@ -56,26 +61,34 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
             const res = await tauriApi.runJq(input, parsedContent);
             const serialized = serializeJsonResult(res);
             setResult(serialized);
-            setJqResultContent(serialized);
+            setQueryResultDocument({
+                content: serialized,
+                name: 'JQ Result.json',
+            });
         } catch (e: any) {
-            setJqResultContent(null);
+            setQueryResultDocument(null);
             setResult("JQ Error: " + e.toString());
         }
     };
 
     const runJsonPath = async () => {
-        setJqResultContent(null);
         try {
             const parsedContent = JSON.parse(content);
             const res = await tauriApi.runJsonPath(input, parsedContent);
-            setResult(serializeJsonResult(res));
+            const serialized = serializeJsonResult(res);
+            setResult(serialized);
+            setQueryResultDocument({
+                content: serialized,
+                name: 'JSONPath Result.json',
+            });
         } catch (e: any) {
+            setQueryResultDocument(null);
             setResult("JSONPath Error: " + e.toString());
         }
     };
 
     const decodeJwt = () => {
-        setJqResultContent(null);
+        setQueryResultDocument(null);
         try {
             const parts = content.split('.');
             if (parts.length !== 3) throw new Error("Invalid JWT format");
@@ -88,7 +101,7 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
     };
 
     const anonymize = async () => {
-        setJqResultContent(null);
+        setQueryResultDocument(null);
         try {
             const res = await tauriApi.anonymizeData(JSON.parse(content));
             setContent(JSON.stringify(res, null, 2));
@@ -99,12 +112,12 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
     };
 
     const validateJson = () => {
-        setJqResultContent(null);
+        setQueryResultDocument(null);
         setResult(validateJsonContent(content).message);
     };
 
     const applyJsonTransform = (action: 'format' | 'beautify' | 'minify') => {
-        setJqResultContent(null);
+        setQueryResultDocument(null);
         try {
             const nextContent = action === 'minify'
                 ? minifyJsonContent(content)
@@ -121,23 +134,23 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
         }
     };
 
-    const copyJqResult = async () => {
-        if (!jqResultContent) return;
+    const copyQueryResult = async () => {
+        if (!queryResultDocument) return;
 
         try {
-            await navigator.clipboard.writeText(jqResultContent);
+            await navigator.clipboard.writeText(queryResultDocument.content);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             setResult(`Copy error: ${message}`);
         }
     };
 
-    const createJqResultDocument = () => {
-        if (!jqResultContent || !onCreateDocument) return;
+    const createQueryResultDocument = () => {
+        if (!queryResultDocument || !onCreateDocument) return;
 
-        onCreateDocument(jqResultContent, {
+        onCreateDocument(queryResultDocument.content, {
             format: 'json',
-            name: 'JQ Result.json',
+            name: queryResultDocument.name,
         });
     };
 
@@ -288,16 +301,16 @@ export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }:
                         <CodeEditor value={result} onChange={() => { }} language="json" />
                     </div>
 
-                    {tool === 'jq' && jqResultContent && (
+                    {(tool === 'jq' || tool === 'jsonpath') && queryResultDocument && (
                         <div className="flex justify-end gap-2">
                             <button
-                                onClick={copyJqResult}
+                                onClick={copyQueryResult}
                                 className="rounded border border-border bg-surface px-3 py-2 text-xs font-bold text-text hover:bg-muted/10 flex items-center gap-2"
                             >
                                 <Copy size={14} /> Copy result
                             </button>
                             <button
-                                onClick={createJqResultDocument}
+                                onClick={createQueryResultDocument}
                                 disabled={!onCreateDocument}
                                 className="rounded bg-primary px-3 py-2 text-xs font-bold text-background hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
                             >

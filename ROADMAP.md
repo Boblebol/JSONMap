@@ -277,7 +277,7 @@ Tickets use the following format:
 | JM-034 | design | P0 | Add developer tools drawer | Advanced tools are hidden by default behind one sidebar action but easy to access. |
 | JM-035 | feature | P0 | Add format, validate, beautify, minify | JSON actions operate on the active document and report errors clearly. |
 | JM-036 | feature | P0 | Add JQ tool for active document | JQ results can be viewed, copied, and created as a selected in-memory JSON document. |
-| JM-037 | feature | P0 | Add JSONPath tool for active document | Query results can be viewed, copied, or applied as a new document. |
+| JM-037 | feature | P0 | Add JSONPath tool for active document | JSONPath results can be viewed, copied, and created as a selected in-memory JSON document. |
 | JM-038 | feature | P1 | Add JWT decoder | Users can decode a token from selected text or pasted input. |
 | JM-039 | feature | P1 | Add anonymizer | Users can anonymize sensitive fields and save as a version. |
 | JM-040 | feature | P1 | Copy JSON path | Users can copy the selected node path as JSONPath from the inspector. |

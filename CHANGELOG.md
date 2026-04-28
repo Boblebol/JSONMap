@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Developer tools drawer that hides advanced tools behind one sidebar action.
 - Developer tools actions for JSON validation, formatting, beautifying, and minifying.
 - JQ result actions to copy query output and create it as a selected in-memory JSON document.
+- JSONPath result actions to copy query output and create it as a selected in-memory JSON document.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed
