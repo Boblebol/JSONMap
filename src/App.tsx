@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect, type DragEvent } from 'react';
+import { AlertTriangle, Download, FileJson, RotateCcw } from 'lucide-react';
+import download from 'downloadjs';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { CodeEditor } from './components/Editor/CodeEditor';
 import { GraphView } from './components/Graph/GraphView';
 import { jsonToGraph } from './utils/graphTransform';
-import { tauriApi } from './utils/tauri';
+import { FileFormat, tauriApi } from './utils/tauri';
 import { Node, Edge } from 'reactflow';
 import { CodeGenPanel } from './components/Tools/CodeGenPanel';
 import { ToolsPanel } from './components/Tools/ToolsPanel';
@@ -15,6 +16,16 @@ import { ShortcutOverlay } from './components/Help/ShortcutOverlay';
 import { SchemaPanel } from './components/Tools/SchemaPanel';
 import { AboutModal } from './components/About/AboutModal';
 import { updateValueByPath } from './utils/jsonUtils';
+import {
+  addDocuments,
+  createDocument,
+  createWorkspace,
+  getActiveDocument,
+  resetActiveDocument,
+  setActiveDocument,
+  updateActiveDocumentContent,
+  WorkspaceDocument,
+} from './utils/documentWorkspace';
 
 const SAMPLE_JSON = `{
   "name": "JSONMap",
@@ -30,27 +41,67 @@ const SAMPLE_JSON = `{
   }
 }`;
 
+const inferFormatFromName = (name: string): FileFormat => {
+  const ext = name.split('.').pop()?.toLowerCase();
+  if (['yaml', 'yml'].includes(ext || '')) return 'yaml';
+  if (ext === 'xml') return 'xml';
+  if (ext === 'toml') return 'toml';
+  if (ext === 'csv') return 'csv';
+  return 'json';
+};
+
+const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;
+
+const readDroppedFileContent = (file: File): Promise<string> => {
+  if (typeof file.text === 'function') {
+    return file.text();
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error(`Failed to read ${file.name}`));
+    reader.readAsText(file);
+  });
+};
+
+const createInitialWorkspace = () => addDocuments(
+  createWorkspace(),
+  [
+    createDocument({
+      id: 'sample-json',
+      name: 'Sample JSON',
+      content: SAMPLE_JSON,
+      format: 'json',
+    })
+  ]
+);
+
 function App() {
   const [activeTab, setActiveTab] = useState('visualizer');
-  const [content, setContent] = useState(SAMPLE_JSON);
-  const [lastSavedContent, setLastSavedContent] = useState(SAMPLE_JSON);
-  const [format, setFormat] = useState('json');
+  const [workspace, setWorkspace] = useState(createInitialWorkspace);
   const [graphData, setGraphData] = useState<{ nodes: Node[], edges: Edge[], truncated?: boolean }>({ nodes: [], edges: [] });
   const [error, setError] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [isGraphStale, setIsGraphStale] = useState(true);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
-  const isDirty = content !== lastSavedContent;
+  const activeDocument = useMemo(() => getActiveDocument(workspace), [workspace]);
+  const content = activeDocument?.currentContent ?? '';
+  const format = activeDocument?.format ?? 'json';
+  const isDirty = activeDocument?.dirty ?? false;
 
   // Use refs for handlers that need latest state without re-triggering effects
   const contentRef = useRef(content);
   const formatRef = useRef(format);
+  const activeDocumentRef = useRef(activeDocument);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     contentRef.current = content;
     formatRef.current = format;
-  }, [content, format]);
+    activeDocumentRef.current = activeDocument;
+  }, [activeDocument, content, format]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,8 +134,30 @@ function App() {
 
   const handleContentChange = useCallback((value: string | undefined) => {
     if (value !== undefined) {
-      setContent(value);
+      setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, value));
     }
+  }, []);
+
+  const handleFormatChange = useCallback((value: string) => {
+    const nextFormat = value as FileFormat;
+    setWorkspace(currentWorkspace => ({
+      ...currentWorkspace,
+      documents: currentWorkspace.documents.map(document => {
+        if (document.id !== currentWorkspace.activeDocumentId) return document;
+        return { ...document, format: nextFormat };
+      })
+    }));
+  }, []);
+
+  const addImportedDocuments = useCallback((documents: WorkspaceDocument[]) => {
+    if (documents.length === 0) return;
+
+    setWorkspace(currentWorkspace => {
+      const updatedWorkspace = addDocuments(currentWorkspace, documents);
+      return setActiveDocument(updatedWorkspace, documents[0].id);
+    });
+    setActiveTab('visualizer');
+    setError(null);
   }, []);
 
   useEffect(() => {
@@ -129,9 +202,14 @@ function App() {
     try {
       const result = await tauriApi.openFile();
       if (result) {
-        setContent(result.content);
-        setLastSavedContent(result.content);
-        setFormat(result.format);
+        addImportedDocuments([
+          createDocument({
+            name: getFileName(result.path),
+            content: result.content,
+            format: result.format,
+            sourcePath: result.path,
+          })
+        ]);
         if (window.__TAURI__) {
           await tauriApi.addRecentFile(result.path);
         }
@@ -140,14 +218,23 @@ function App() {
       console.error(e);
       setError("Failed to open file: " + e.message);
     }
-  }, []);
+  }, [addImportedDocuments]);
 
   const handleSaveFile = useCallback(async () => {
     try {
       const currentContent = contentRef.current;
-      const path = await tauriApi.saveFile(currentContent);
+      const currentDocument = activeDocumentRef.current;
+      const filename = currentDocument?.name.endsWith('.json')
+        ? currentDocument.name
+        : `${currentDocument?.name || 'document'}.json`;
+
+      if (!window.__TAURI__) {
+        download(currentContent, filename, 'application/json');
+        return;
+      }
+
+      const path = await tauriApi.saveFile(currentContent, filename);
       if (path && window.__TAURI__) {
-        setLastSavedContent(currentContent);
         await tauriApi.showNotification("File Saved", `Successfully saved to ${path}`);
       }
     } catch (e: any) {
@@ -164,7 +251,7 @@ function App() {
       }
       const data = JSON.parse(contentRef.current);
       const updatedData = updateValueByPath(data, path, newValue);
-      setContent(JSON.stringify(updatedData, null, 2));
+      setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, JSON.stringify(updatedData, null, 2)));
     } catch (e: any) {
       console.error("Node update error:", e);
       setError("Failed to update JSON from graph: " + e.message);
@@ -175,36 +262,85 @@ function App() {
     try {
       if (format === 'json') {
         const minified = JSON.stringify(JSON.parse(content));
-        setContent(minified);
+        setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, minified));
       } else {
         const minified = content.split('\n').map(l => l.trim()).filter(l => l).join(' ');
-        setContent(minified);
+        setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, minified));
       }
     } catch (e: any) {
       setError("Minify error: " + e.message);
     }
   };
 
-  const handleLoadFilePath = useCallback(async (path: string) => {
+  const handleLoadFilePaths = useCallback(async (paths: string[]) => {
     try {
       const { readTextFile } = await import('@tauri-apps/plugin-fs');
-      const fileContent = await readTextFile(path);
-      const ext = path.split('.').pop()?.toLowerCase();
-      let newFormat = 'json';
-      if (['yaml', 'yml'].includes(ext || '')) newFormat = 'yaml';
-      if (ext === 'xml') newFormat = 'xml';
-      if (ext === 'toml') newFormat = 'toml';
-      if (ext === 'csv') newFormat = 'csv';
+      const documents: WorkspaceDocument[] = [];
 
-      setContent(fileContent);
-      setFormat(newFormat);
-      if (window.__TAURI__) {
-        await tauriApi.addRecentFile(path);
+      for (const path of paths) {
+        const fileContent = await readTextFile(path);
+        documents.push(createDocument({
+          name: getFileName(path),
+          content: fileContent,
+          format: inferFormatFromName(path),
+          sourcePath: path,
+        }));
+        if (window.__TAURI__) {
+          await tauriApi.addRecentFile(path);
+        }
       }
+
+      addImportedDocuments(documents);
     } catch (e: any) {
       console.error("Failed to load path:", e);
       setError("Failed to load recent file: " + e.message);
     }
+  }, [addImportedDocuments]);
+
+  const handleLoadFilePath = useCallback(async (path: string) => {
+    await handleLoadFilePaths([path]);
+  }, [handleLoadFilePaths]);
+
+  const handleDropFiles = useCallback(async (files: FileList) => {
+    try {
+      const documents = await Promise.all(
+        Array.from(files).map(async file => createDocument({
+          name: file.name,
+          content: await readDroppedFileContent(file),
+          format: inferFormatFromName(file.name),
+        }))
+      );
+
+      addImportedDocuments(documents);
+    } catch (e: any) {
+      console.error("Failed to import dropped files:", e);
+      setError("Failed to import dropped files: " + e.message);
+    }
+  }, [addImportedDocuments]);
+
+  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
+    if (event.currentTarget === event.target) {
+      setIsDraggingOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+
+    if (event.dataTransfer.files.length > 0) {
+      handleDropFiles(event.dataTransfer.files);
+    }
+  }, [handleDropFiles]);
+
+  const handleResetActiveDocument = useCallback(() => {
+    setWorkspace(currentWorkspace => resetActiveDocument(currentWorkspace));
+    setError(null);
   }, []);
 
   useEffect(() => {
@@ -228,7 +364,7 @@ function App() {
         unlistenDrop = listen('tauri://drag-drop', async (event: any) => {
           const paths = event.payload.paths as string[];
           if (paths && paths.length > 0) {
-            handleLoadFilePath(paths[0]);
+            handleLoadFilePaths(paths);
           }
         });
       }
@@ -239,15 +375,32 @@ function App() {
       if (unlisten) unlisten.then((fns: any[]) => fns.forEach(fn => fn()));
       if (unlistenDrop) unlistenDrop.then((fn: any) => fn());
     };
-  }, [handleOpenFile, handleSaveFile, handleLoadFilePath]);
+  }, [handleOpenFile, handleSaveFile, handleLoadFilePath, handleLoadFilePaths]);
 
   return (
-    <div className="flex h-screen w-screen bg-transparent overflow-hidden text-text font-sans">
+    <div
+      className="flex h-screen w-screen bg-transparent overflow-hidden text-text font-sans relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDraggingOver && (
+        <div className="absolute inset-0 z-[90] bg-primary/10 border-2 border-primary/60 border-dashed backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+          <div className="bg-background/95 border border-primary/40 rounded-lg px-5 py-4 shadow-2xl flex items-center gap-3">
+            <FileJson size={22} className="text-primary" />
+            <div>
+              <div className="text-sm font-semibold text-text">Drop files to import</div>
+              <div className="text-xs text-muted">JSON files stay in memory until exported.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpen={window.__TAURI__ ? handleOpenFile : undefined}
-        onSave={window.__TAURI__ ? handleSaveFile : undefined}
+        onSave={handleSaveFile}
         onMinify={handleMinify}
         onLogoClick={() => setShowAbout(true)}
         hasUnsavedChanges={isDirty}
@@ -280,19 +433,57 @@ function App() {
           <>
             {/* Editor Panel */}
             <div className="w-1/3 min-w-[300px] flex flex-col border-r border-border">
+              <div className="bg-background border-b border-border">
+                <div className="px-3 py-2 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Files in memory</span>
+                  <span className="text-[10px] text-muted">{workspace.documents.length}</span>
+                </div>
+                <div className="max-h-32 overflow-y-auto px-2 pb-2 space-y-1">
+                  {workspace.documents.map(document => (
+                    <button
+                      key={document.id}
+                      onClick={() => setWorkspace(currentWorkspace => setActiveDocument(currentWorkspace, document.id))}
+                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${document.id === activeDocument?.id ? 'bg-primary/15 text-primary' : 'text-text/70 hover:bg-muted/10 hover:text-text'}`}
+                      title={document.sourcePath || document.name}
+                    >
+                      <FileJson size={14} className="shrink-0" />
+                      <span className="min-w-0 flex-1 truncate text-xs">{document.name}</span>
+                      {document.dirty && <span className="w-1.5 h-1.5 rounded-full bg-[#eab308] shrink-0" title="Modified" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="bg-surface p-2 border-b border-border flex justify-between items-center">
                 <span className="text-sm font-semibold pl-2">Input</span>
-                <select
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value)}
-                  className="bg-background border border-border rounded px-2 py-1 text-xs"
-                >
-                  <option value="json">JSON</option>
-                  <option value="yaml">YAML</option>
-                  <option value="xml">XML</option>
-                  <option value="toml">TOML</option>
-                  <option value="csv">CSV</option>
-                </select>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={handleResetActiveDocument}
+                    disabled={!isDirty}
+                    className="p-1.5 rounded border border-border text-muted hover:text-text hover:bg-muted/10 disabled:opacity-40 disabled:hover:bg-transparent"
+                    title="Reset active document to original"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                  <button
+                    onClick={handleSaveFile}
+                    disabled={!activeDocument}
+                    className="p-1.5 rounded border border-border text-muted hover:text-text hover:bg-muted/10 disabled:opacity-40"
+                    title="Export active document"
+                  >
+                    <Download size={14} />
+                  </button>
+                  <select
+                    value={format}
+                    onChange={(e) => handleFormatChange(e.target.value)}
+                    className="bg-background border border-border rounded px-2 py-1 text-xs"
+                  >
+                    <option value="json">JSON</option>
+                    <option value="yaml">YAML</option>
+                    <option value="xml">XML</option>
+                    <option value="toml">TOML</option>
+                    <option value="csv">CSV</option>
+                  </select>
+                </div>
               </div>
               <div className="flex-1 relative">
                 <CodeEditor
@@ -329,7 +520,11 @@ function App() {
         )}
 
         {activeTab === 'tools' && (
-          <ToolsPanel content={content} setContent={setContent} setFormat={setFormat} />
+          <ToolsPanel
+            content={content}
+            setContent={(nextContent) => setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, nextContent))}
+            setFormat={handleFormatChange}
+          />
         )}
 
         {activeTab === 'converter' && (

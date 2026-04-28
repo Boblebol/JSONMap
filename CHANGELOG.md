@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- In-memory document workspace for imported JSON files.
+- Drag and drop import for local files in the web shell.
+- Active document reset and export controls.
+- Roadmap with version milestones, ticket backlog, labels, and release checklist.
+
+### Fixed
+- JQ and JSONPath tools now pass the query and parsed JSON arguments in the correct order.
+- Backend tests now run with the Tauri macOS private API feature enabled.
+
 ## [1.1.2] - 2026-03-08
 
 ### Fixed

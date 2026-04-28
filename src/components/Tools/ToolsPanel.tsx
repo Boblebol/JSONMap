@@ -32,7 +32,8 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
 
     const runJq = async () => {
         try {
-            const res = await tauriApi.runJq(content, input);
+            const parsedContent = JSON.parse(content);
+            const res = await tauriApi.runJq(input, parsedContent);
             setResult(typeof res === 'string' ? res : JSON.stringify(res, null, 2));
         } catch (e: any) {
             setResult("JQ Error: " + e.toString());
@@ -41,7 +42,8 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
 
     const runJsonPath = async () => {
         try {
-            const res = await tauriApi.runJsonPath(content, input);
+            const parsedContent = JSON.parse(content);
+            const res = await tauriApi.runJsonPath(input, parsedContent);
             setResult(JSON.stringify(res, null, 2));
         } catch (e: any) {
             setResult("JSONPath Error: " + e.toString());
