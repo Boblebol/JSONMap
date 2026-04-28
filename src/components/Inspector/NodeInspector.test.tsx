@@ -38,6 +38,40 @@ describe('NodeInspector', () => {
         expect(onValueUpdate).toHaveBeenCalledWith(['name'], 'Updated');
     });
 
+    it('offers developer actions for the selected JSON path and subtree', () => {
+        const onCopyPath = vi.fn();
+        const onCopySubtree = vi.fn();
+        const onExportSubtree = vi.fn();
+        const selectedObjectNode = {
+            id: 'n_2',
+            data: {
+                label: 'settings',
+                path: ['settings'],
+                type: 'object',
+                value: { theme: 'dark' },
+            },
+        } as any;
+
+        render(
+            <NodeInspector
+                selectedNode={selectedObjectNode}
+                format="json"
+                onValueUpdate={() => { }}
+                onCopyPath={onCopyPath}
+                onCopySubtree={onCopySubtree}
+                onExportSubtree={onExportSubtree}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Copy path'));
+        fireEvent.click(screen.getByText('Copy subtree'));
+        fireEvent.click(screen.getByText('Export subtree'));
+
+        expect(onCopyPath).toHaveBeenCalledWith(['settings']);
+        expect(onCopySubtree).toHaveBeenCalledWith(['settings']);
+        expect(onExportSubtree).toHaveBeenCalledWith(['settings']);
+    });
+
     it('does not allow edits for non-JSON formats', () => {
         const onValueUpdate = vi.fn();
 

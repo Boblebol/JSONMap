@@ -19,20 +19,36 @@ vi.mock('./components/Editor/CodeEditor', () => ({
 
 vi.mock('./components/Graph/GraphView', () => ({
     GraphView: ({ onNodeSelect }: { onNodeSelect?: (node: any) => void }) => (
-        <button
-            data-testid="graph-view"
-            onClick={() => onNodeSelect?.({
-                id: 'n_1',
-                data: {
-                    label: 'name: before',
-                    path: ['name'],
-                    type: 'string',
-                    value: 'before',
-                },
-            })}
-        >
-            Graph
-        </button>
+        <div>
+            <button
+                data-testid="graph-view"
+                onClick={() => onNodeSelect?.({
+                    id: 'n_1',
+                    data: {
+                        label: 'name: before',
+                        path: ['name'],
+                        type: 'string',
+                        value: 'before',
+                    },
+                })}
+            >
+                Graph
+            </button>
+            <button
+                data-testid="graph-view-settings"
+                onClick={() => onNodeSelect?.({
+                    id: 'n_2',
+                    data: {
+                        label: 'settings',
+                        path: ['settings'],
+                        type: 'object',
+                        value: { theme: 'dark', flags: [true] },
+                    },
+                })}
+            >
+                Settings
+            </button>
+        </div>
     ),
 }));
 
@@ -71,6 +87,11 @@ vi.mock('./components/Help/HelpPanel', () => ({
 describe('App workspace', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        Object.assign(navigator, {
+            clipboard: {
+                writeText: vi.fn().mockResolvedValue(undefined),
+            },
+        });
     });
 
     it('imports dropped JSON files into memory and selects the dropped file', async () => {
@@ -162,6 +183,55 @@ describe('App workspace', () => {
         await waitFor(() => {
             expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{\n  "name": "after"\n}');
         });
+    });
+
+    it('copies the selected graph path and subtree from the inspector', async () => {
+        const { container } = render(<App />);
+        const file = new File(['{"settings":{"theme":"dark","flags":[true]}}'], 'payload.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"settings":{"theme":"dark","flags":[true]}}');
+        });
+
+        fireEvent.click(screen.getByTestId('graph-view-settings'));
+        fireEvent.click(screen.getByText('Copy path'));
+        fireEvent.click(screen.getByText('Copy subtree'));
+
+        expect(navigator.clipboard.writeText).toHaveBeenNthCalledWith(1, '$.settings');
+        expect(navigator.clipboard.writeText).toHaveBeenNthCalledWith(
+            2,
+            '{\n  "theme": "dark",\n  "flags": [\n    true\n  ]\n}'
+        );
+    });
+
+    it('exports the selected graph subtree from the inspector', async () => {
+        const { container } = render(<App />);
+        const file = new File(['{"settings":{"theme":"dark","flags":[true]}}'], 'payload.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"settings":{"theme":"dark","flags":[true]}}');
+        });
+
+        fireEvent.click(screen.getByTestId('graph-view-settings'));
+        fireEvent.click(screen.getByText('Export subtree'));
+
+        expect(download).toHaveBeenCalledWith(
+            '{\n  "theme": "dark",\n  "flags": [\n    true\n  ]\n}',
+            'payload-settings.json',
+            'application/json'
+        );
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {

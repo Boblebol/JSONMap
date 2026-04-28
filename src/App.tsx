@@ -17,7 +17,7 @@ import { HelpPanel } from './components/Help/HelpPanel';
 import { ShortcutOverlay } from './components/Help/ShortcutOverlay';
 import { SchemaPanel } from './components/Tools/SchemaPanel';
 import { AboutModal } from './components/About/AboutModal';
-import { updateValueByPath } from './utils/jsonUtils';
+import { formatJsonPath, getValueByPath, updateValueByPath } from './utils/jsonUtils';
 import { createLineDiffPreview } from './utils/contentDiff';
 import {
   addDocuments,
@@ -67,6 +67,12 @@ const sanitizeFileSegment = (value: string) => value
   .replace(/^-+|-+$/g, '') || 'snapshot';
 
 const getSnapshotExtension = (format: FileFormat) => format === 'yaml' ? 'yaml' : format;
+
+const getPathFileSegment = (path: (string | number)[]) => (
+  path.length === 0
+    ? 'root'
+    : path.map(segment => String(segment).replace(/^\[(\d+)\]$/, '$1')).join('-')
+);
 
 const readDroppedFileContent = (file: File): Promise<string> => {
   if (typeof file.text === 'function') {
@@ -327,6 +333,58 @@ function App() {
     }
   }, [format]);
 
+  const getSelectedJsonSubtree = useCallback((path: (string | number)[]) => {
+    if (formatRef.current !== 'json') {
+      throw new Error('Subtree actions are currently only supported for JSON documents.');
+    }
+
+    const data = JSON.parse(contentRef.current);
+    return getValueByPath(data, path);
+  }, []);
+
+  const handleCopyNodePath = useCallback(async (path: (string | number)[]) => {
+    try {
+      await navigator.clipboard.writeText(formatJsonPath(path));
+      setError(null);
+    } catch (e: any) {
+      console.error("Path copy error:", e);
+      setError("Failed to copy JSON path: " + e.message);
+    }
+  }, []);
+
+  const handleCopyNodeSubtree = useCallback(async (path: (string | number)[]) => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(getSelectedJsonSubtree(path), null, 2));
+      setError(null);
+    } catch (e: any) {
+      console.error("Subtree copy error:", e);
+      setError("Failed to copy subtree: " + e.message);
+    }
+  }, [getSelectedJsonSubtree]);
+
+  const handleExportNodeSubtree = useCallback(async (path: (string | number)[]) => {
+    try {
+      const currentDocument = activeDocumentRef.current;
+      if (!currentDocument) return;
+
+      const subtreeContent = JSON.stringify(getSelectedJsonSubtree(path), null, 2);
+      const filename = `${stripKnownExtension(currentDocument.name)}-${sanitizeFileSegment(getPathFileSegment(path))}.json`;
+
+      if (!window.__TAURI__) {
+        download(subtreeContent, filename, 'application/json');
+        return;
+      }
+
+      const savedPath = await tauriApi.saveFile(subtreeContent, filename);
+      if (savedPath && window.__TAURI__) {
+        await tauriApi.showNotification("Subtree Exported", `Successfully saved to ${savedPath}`);
+      }
+    } catch (e: any) {
+      console.error("Subtree export error:", e);
+      setError("Failed to export subtree: " + e.message);
+    }
+  }, [getSelectedJsonSubtree]);
+
   const handleMinify = () => {
     try {
       if (format === 'json') {
@@ -584,6 +642,9 @@ function App() {
                     selectedNode={selectedNode}
                     format={format}
                     onValueUpdate={handleNodeUpdate}
+                    onCopyPath={handleCopyNodePath}
+                    onCopySubtree={handleCopyNodeSubtree}
+                    onExportSubtree={handleExportNodeSubtree}
                   />
                 </div>
                 <div className="flex-1 min-h-0">

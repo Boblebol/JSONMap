@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Check, Info } from 'lucide-react';
+import { Box, Check, Copy, Download, Info } from 'lucide-react';
 import type { Node } from 'reactflow';
 import type { FileFormat } from '../../utils/tauri';
+import { formatJsonPath } from '../../utils/jsonUtils';
 
 interface NodeInspectorProps {
     selectedNode: Node | null;
     format: FileFormat;
     onValueUpdate: (path: (string | number)[], value: unknown) => void;
+    onCopyPath?: (path: (string | number)[]) => void;
+    onCopySubtree?: (path: (string | number)[]) => void;
+    onExportSubtree?: (path: (string | number)[]) => void;
 }
 
 const isEditableType = (type: string) => ['string', 'number', 'boolean', 'null'].includes(type);
@@ -23,7 +27,14 @@ const coerceValue = (rawValue: string, type: string) => {
     return rawValue;
 };
 
-export const NodeInspector = ({ selectedNode, format, onValueUpdate }: NodeInspectorProps) => {
+export const NodeInspector = ({
+    selectedNode,
+    format,
+    onValueUpdate,
+    onCopyPath,
+    onCopySubtree,
+    onExportSubtree,
+}: NodeInspectorProps) => {
     const data = selectedNode?.data;
     const type = String(data?.type ?? '');
     const path = useMemo(() => (Array.isArray(data?.path) ? data.path : []), [data?.path]);
@@ -49,6 +60,7 @@ export const NodeInspector = ({ selectedNode, format, onValueUpdate }: NodeInspe
 
     const label = String(data.label ?? '').split(':')[0];
     const editable = format === 'json' && isEditableType(type);
+    const developerActionsEnabled = format === 'json';
 
     const handleApply = () => {
         onValueUpdate(path, coerceValue(value, type));
@@ -62,9 +74,36 @@ export const NodeInspector = ({ selectedNode, format, onValueUpdate }: NodeInspe
                     <h3 className="text-sm font-bold">Node details</h3>
                 </div>
                 <div className="text-xs text-muted break-words">{formatPath(path)}</div>
+                <div className="mt-2 text-[11px] font-mono text-text break-words">{formatJsonPath(path)}</div>
             </div>
 
             <div className="p-4 space-y-4 overflow-y-auto">
+                {developerActionsEnabled && (
+                    <div className="grid grid-cols-1 gap-2">
+                        <button
+                            onClick={() => onCopyPath?.(path)}
+                            className="rounded border border-border bg-surface px-2 py-2 text-[11px] text-text hover:bg-muted/10 flex items-center justify-start gap-1.5"
+                            title="Copy JSON path"
+                        >
+                            <Copy size={12} /> Copy path
+                        </button>
+                        <button
+                            onClick={() => onCopySubtree?.(path)}
+                            className="rounded border border-border bg-surface px-2 py-2 text-[11px] text-text hover:bg-muted/10 flex items-center justify-start gap-1.5"
+                            title="Copy selected subtree as JSON"
+                        >
+                            <Copy size={12} /> Copy subtree
+                        </button>
+                        <button
+                            onClick={() => onExportSubtree?.(path)}
+                            className="rounded border border-border bg-surface px-2 py-2 text-[11px] text-text hover:bg-muted/10 flex items-center justify-start gap-1.5"
+                            title="Export selected subtree"
+                        >
+                            <Download size={12} /> Export subtree
+                        </button>
+                    </div>
+                )}
+
                 <div>
                     <div className="text-[10px] uppercase font-bold text-muted mb-1">Key</div>
                     <div className="text-sm text-text break-words">{label}</div>

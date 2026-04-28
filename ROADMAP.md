@@ -143,7 +143,7 @@ Scope:
 - Add JQ and JSONPath query execution.
 - Add JWT decode.
 - Add anonymization.
-- Add copy JSON path and copy subtree.
+- Add copy JSON path, copy subtree, and selected subtree export.
 
 Exit criteria:
 
@@ -280,8 +280,8 @@ Tickets use the following format:
 | JM-037 | feature | P0 | Add JSONPath tool for active document | Query results can be viewed, copied, or applied as a new document. |
 | JM-038 | feature | P1 | Add JWT decoder | Users can decode a token from selected text or pasted input. |
 | JM-039 | feature | P1 | Add anonymizer | Users can anonymize sensitive fields and save as a version. |
-| JM-040 | feature | P1 | Copy JSON path | Users can copy the selected node path. |
-| JM-041 | feature | P1 | Copy subtree | Users can copy the selected branch as JSON. |
+| JM-040 | feature | P1 | Copy JSON path | Users can copy the selected node path as JSONPath from the inspector. |
+| JM-041 | feature | P1 | Copy subtree | Users can copy or export the selected branch as formatted JSON. |
 
 ### v1.7.0 Tickets
 
