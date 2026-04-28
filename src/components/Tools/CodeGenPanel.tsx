@@ -25,17 +25,18 @@ const LANGUAGES = [
     { id: 'swift', label: 'Swift' },
 ];
 
-const stripKnownExtension = (name: string) => name.replace(/(\.pydantic)?\.(json|yaml|yml|xml|toml|csv|ts|py)$/i, '');
+const stripKnownExtension = (name: string) => name.replace(/(\.pydantic)?\.(json|yaml|yml|xml|toml|csv|ts|py|go)$/i, '');
 
 const getGeneratedDocumentName = (sourceName: string | undefined, lang: string) => {
     const baseName = sourceName ? stripKnownExtension(sourceName) : 'Generated types';
-    const extension = lang === 'typescript' ? 'ts' : lang === 'python' ? 'py' : lang === 'pydantic' ? 'pydantic.py' : 'txt';
+    const extension = lang === 'typescript' ? 'ts' : lang === 'python' ? 'py' : lang === 'pydantic' ? 'pydantic.py' : lang === 'go' ? 'go' : 'txt';
     return `${baseName}.${extension}`;
 };
 
 const getGeneratedDocumentFormat = (lang: string): FileFormat | null => {
     if (lang === 'typescript') return 'typescript';
     if (lang === 'python' || lang === 'pydantic') return 'python';
+    if (lang === 'go') return 'go';
     return null;
 };
 

@@ -56,14 +56,15 @@ const inferFormatFromName = (name: string): FileFormat => {
   if (ext === 'csv') return 'csv';
   if (ext === 'ts') return 'typescript';
   if (ext === 'py') return 'python';
+  if (ext === 'go') return 'go';
   return 'json';
 };
 
 const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;
 
-const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts|py)$/i, '');
+const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts|py|go)$/i, '');
 
-const hasKnownExtension = (name: string) => /\.(json|yaml|yml|xml|toml|csv|ts|py)$/i.test(name);
+const hasKnownExtension = (name: string) => /\.(json|yaml|yml|xml|toml|csv|ts|py|go)$/i.test(name);
 
 const sanitizeFileSegment = (value: string) => value
   .trim()
@@ -81,6 +82,7 @@ const getEditorLanguage = (format: FileFormat) => {
   if (format === 'json') return 'json';
   if (format === 'typescript') return 'typescript';
   if (format === 'python') return 'python';
+  if (format === 'go') return 'go';
   return 'yaml';
 };
 
@@ -661,6 +663,7 @@ function App() {
                     <option value="csv">CSV</option>
                     <option value="typescript">TypeScript</option>
                     <option value="python">Python</option>
+                    <option value="go">Go</option>
                   </select>
                 </div>
               </div>

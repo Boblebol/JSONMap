@@ -14,6 +14,10 @@ vi.mock('quicktype-core', () => ({
             return Promise.resolve({ lines: ['from dataclasses import dataclass', '', '@dataclass', 'class Root:', '    name: str'] });
         }
 
+        if (lang === 'go') {
+            return Promise.resolve({ lines: ['type Root struct {', '    Name string `json:"name"`', '}'] });
+        }
+
         return Promise.resolve({ lines: ['interface Root {', '  name: string;', '}'] });
     }),
     InputData: class {
@@ -150,6 +154,39 @@ describe('CodeGenPanel', () => {
         expect(onCreateDocument).toHaveBeenCalledWith('from pydantic import BaseModel\n\nclass Root(BaseModel):\n    name: str', {
             format: 'python',
             name: 'payload.pydantic.py',
+        });
+    });
+
+    it('creates a Go workspace document from generated structs', async () => {
+        const onCreateDocument = vi.fn();
+
+        render(
+            <CodeGenPanel
+                content='{"name":"test"}'
+                sourceName="payload.json"
+                onCreateDocument={onCreateDocument}
+            />
+        );
+
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'go' } });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('code-editor')).toHaveTextContent('type Root struct');
+        });
+
+        expect(quicktype).toHaveBeenLastCalledWith(expect.objectContaining({
+            lang: 'go',
+            rendererOptions: expect.objectContaining({
+                'just-types': 'true',
+                package: 'json_map',
+            }),
+        }));
+
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(onCreateDocument).toHaveBeenCalledWith('type Root struct {\n    Name string `json:"name"`\n}', {
+            format: 'go',
+            name: 'payload.go',
         });
     });
 });

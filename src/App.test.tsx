@@ -61,7 +61,7 @@ vi.mock('./components/Help/ShortcutOverlay', () => ({
 }));
 
 vi.mock('./components/Tools/CodeGenPanel', () => ({
-    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' | 'python' }) => void }) => (
+    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' | 'python' | 'go' }) => void }) => (
         <div>
             Code generation panel
             <button onClick={() => onCreateDocument?.('export interface Root {}', { name: 'Sample JSON.ts', format: 'typescript' })}>
@@ -72,6 +72,9 @@ vi.mock('./components/Tools/CodeGenPanel', () => ({
             </button>
             <button onClick={() => onCreateDocument?.('from pydantic import BaseModel', { name: 'Sample JSON.pydantic.py', format: 'python' })}>
                 Create Pydantic document
+            </button>
+            <button onClick={() => onCreateDocument?.('type Root struct {}', { name: 'Sample JSON.go', format: 'go' })}>
+                Create Go document
             </button>
         </div>
     ),
@@ -353,6 +356,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Sample JSON.pydantic.py')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('from pydantic import BaseModel');
+    });
+
+    it('adds generated Go structs as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Code Generation'));
+        fireEvent.click(screen.getByText('Create Go document'));
+
+        expect(await screen.findByText('Sample JSON.go')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('type Root struct {}');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {
