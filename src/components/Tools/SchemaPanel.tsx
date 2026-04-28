@@ -1,9 +1,23 @@
 import { useState } from 'react';
 import { tauriApi } from '../../utils/tauri';
 import { CodeEditor } from '../Editor/CodeEditor';
-import { FileSearch, CheckCircle2, AlertCircle, Play, Sparkles } from 'lucide-react';
+import { FileSearch, CheckCircle2, AlertCircle, Play, Sparkles, FilePlus2 } from 'lucide-react';
+import type { FileFormat } from '../../utils/tauri';
 
-export const SchemaPanel = ({ content }: { content: string }) => {
+interface SchemaPanelProps {
+    content: string;
+    sourceName?: string;
+    onCreateDocument?: (content: string, options: { name: string; format: FileFormat }) => void;
+}
+
+const stripKnownExtension = (name: string) => name.replace(/(\.schema)?\.(json|yaml|yml|xml|toml|csv|ts|py|go|rs)$/i, '');
+
+const getSchemaDocumentName = (sourceName?: string) => {
+    const baseName = sourceName ? stripKnownExtension(sourceName) : 'Generated schema';
+    return `${baseName}.schema.json`;
+};
+
+export const SchemaPanel = ({ content, sourceName, onCreateDocument }: SchemaPanelProps) => {
     const [schema, setSchema] = useState('');
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [isValidating, setIsValidating] = useState(false);
@@ -45,6 +59,15 @@ export const SchemaPanel = ({ content }: { content: string }) => {
         }
     };
 
+    const createSchemaDocument = () => {
+        if (!schema || !onCreateDocument) return;
+
+        onCreateDocument(schema, {
+            format: 'json',
+            name: getSchemaDocumentName(sourceName),
+        });
+    };
+
     return (
         <div className="flex bg-background h-full w-full overflow-hidden">
             <div className="w-1/2 flex flex-col border-r border-border p-4 gap-4">
@@ -57,6 +80,15 @@ export const SchemaPanel = ({ content }: { content: string }) => {
                         >
                             <FileSearch size={14} /> Infer
                         </button>
+                        {onCreateDocument && (
+                            <button
+                                onClick={createSchemaDocument}
+                                disabled={!schema}
+                                className="text-xs bg-muted/10 hover:bg-muted/20 text-text px-3 py-1.5 rounded-lg border border-border flex items-center gap-2 transition-colors disabled:opacity-50"
+                            >
+                                <FilePlus2 size={14} /> Create document
+                            </button>
+                        )}
                         <button
                             onClick={generateMockData}
                             disabled={!schema}

@@ -728,7 +728,11 @@ function App() {
         )}
 
         {activeTab === 'schema' && (
-          <SchemaPanel content={content} />
+          <SchemaPanel
+            content={content}
+            sourceName={activeDocument?.name}
+            onCreateDocument={handleCreateToolDocument}
+          />
         )}
 
         {activeTab === 'tools' && (

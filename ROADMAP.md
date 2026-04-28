@@ -293,7 +293,7 @@ Tickets use the following format:
 | JM-045 | feature | P0 | Add Pydantic v2 generation | Generated models use Pydantic v2 conventions and can be created as a selected `.pydantic.py` workspace document. |
 | JM-046 | feature | P1 | Add Go struct generation | Generated Go types are formatted, usable, and can be created as a selected `.go` workspace document. |
 | JM-047 | feature | P1 | Add Rust serde generation | Generated Rust structs include serde derives and can be created as a selected `.rs` workspace document. |
-| JM-048 | feature | P1 | Add JSON Schema generation | Generated schemas can validate the source document. |
+| JM-048 | feature | P1 | Add JSON Schema generation | Generated schemas can validate the source document and can be created as a selected `.schema.json` workspace document. |
 | JM-049 | test | P1 | Add codegen snapshot tests | Generated output is covered by stable fixtures. |
 
 ### v1.8.0 Tickets

@@ -84,7 +84,14 @@ vi.mock('./components/Tools/CodeGenPanel', () => ({
 }));
 
 vi.mock('./components/Tools/SchemaPanel', () => ({
-    SchemaPanel: () => <div>Schema panel</div>,
+    SchemaPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'json' }) => void }) => (
+        <div>
+            Schema panel
+            <button onClick={() => onCreateDocument?.('{"type":"object"}', { name: 'Sample JSON.schema.json', format: 'json' })}>
+                Create schema document
+            </button>
+        </div>
+    ),
 }));
 
 vi.mock('./components/Tools/ToolsPanel', () => ({
@@ -381,6 +388,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Sample JSON.rs')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('pub struct Root {}');
+    });
+
+    it('adds generated JSON Schema as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Schema Tools'));
+        fireEvent.click(screen.getByText('Create schema document'));
+
+        expect(await screen.findByText('Sample JSON.schema.json')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"type":"object"}');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {
