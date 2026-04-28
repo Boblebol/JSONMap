@@ -1,18 +1,20 @@
-import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo, type FormEvent } from 'react';
 import ReactFlow, {
     Background,
     Controls,
     Panel,
-    Node,
-    Edge,
+    type Node,
+    type Edge,
+    type ReactFlowInstance,
     useNodesState,
     useEdgesState
 } from 'reactflow';
 import { toPng, toJpeg, toSvg } from 'html-to-image';
 import download from 'downloadjs';
-import { Image, Download, FileImage, Info, Check, Settings2 } from 'lucide-react';
+import { Image, Download, FileImage, Info, Check, Settings2, Search, LocateFixed, ChevronLeft, ChevronRight } from 'lucide-react';
 import { tauriApi } from '../../utils/tauri';
 import { EditableNode } from './EditableNode';
+import { findGraphSearchMatches } from '../../utils/graphSearch';
 import 'reactflow/dist/style.css';
 
 interface GraphViewProps {
@@ -38,12 +40,27 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [exportQuality, setExportQuality] = useState(2);
     const [showExportOptions, setShowExportOptions] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+    const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
     const ref = useRef<HTMLDivElement>(null);
+    const searchMatches = useMemo(() => findGraphSearchMatches(nodes, searchQuery), [nodes, searchQuery]);
+    const activeMatch = searchMatches[activeMatchIndex];
 
     useEffect(() => {
         setNodes(preparedNodes);
         setEdges(initialEdges);
     }, [preparedNodes, initialEdges, setNodes, setEdges]);
+
+    useEffect(() => {
+        setActiveMatchIndex(0);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (activeMatchIndex >= searchMatches.length) {
+            setActiveMatchIndex(0);
+        }
+    }, [activeMatchIndex, searchMatches.length]);
 
     const exportImage = useCallback((format: 'png' | 'jpeg' | 'svg') => {
         if (ref.current === null) return;
@@ -84,6 +101,34 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
         window.addEventListener('trigger-graph-export', handleExportRequest);
         return () => window.removeEventListener('trigger-graph-export', handleExportRequest);
     }, [exportImage]);
+
+    const focusSearchResult = useCallback((node: Node | undefined = activeMatch) => {
+        if (!node) return;
+
+        setNodes(currentNodes => currentNodes.map(currentNode => ({
+            ...currentNode,
+            selected: currentNode.id === node.id,
+        })));
+        onNodeSelect?.(node);
+        flowInstance?.setCenter(
+            node.position.x + (node.width ?? 200) / 2,
+            node.position.y + (node.height ?? 50) / 2,
+            { zoom: 1.2, duration: 500 }
+        );
+    }, [activeMatch, flowInstance, onNodeSelect, setNodes]);
+
+    const moveSearchResult = useCallback((direction: 1 | -1) => {
+        if (searchMatches.length === 0) return;
+
+        const nextIndex = (activeMatchIndex + direction + searchMatches.length) % searchMatches.length;
+        setActiveMatchIndex(nextIndex);
+        focusSearchResult(searchMatches[nextIndex]);
+    }, [activeMatchIndex, focusSearchResult, searchMatches]);
+
+    const handleSearchSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        focusSearchResult();
+    }, [focusSearchResult]);
 
     const onNodeDoubleClick = useCallback((_: any, node: Node) => {
         const getDescendants = (nodeId: string, visited = new Set<string>()): string[] => {
@@ -129,11 +174,56 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
                 onNodeClick={(_, node) => onNodeSelect?.(node)}
                 onNodeDoubleClick={onNodeDoubleClick}
                 nodeTypes={nodeTypes}
+                onInit={setFlowInstance}
                 fitView
                 className="text-text"
             >
                 <Background color="#414868" gap={16} />
                 <Controls className="bg-surface border-border text-text fill-text" />
+
+                <Panel position="top-left" className="flex flex-col gap-2 items-start">
+                    <form
+                        onSubmit={handleSearchSubmit}
+                        className="bg-surface/90 backdrop-blur p-2 rounded-lg border border-border flex items-center gap-2 shadow-sm"
+                    >
+                        <Search size={15} className="text-muted shrink-0" />
+                        <input
+                            aria-label="Search graph nodes"
+                            value={searchQuery}
+                            onChange={(event) => setSearchQuery(event.target.value)}
+                            placeholder="Search nodes"
+                            className="w-40 bg-background border border-border rounded px-2 py-1.5 text-xs text-text focus:outline-none focus:border-primary"
+                        />
+                        <span className="w-10 text-center text-[10px] text-muted">
+                            {searchQuery.trim() ? `${searchMatches.length ? activeMatchIndex + 1 : 0}/${searchMatches.length}` : '0/0'}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => moveSearchResult(-1)}
+                            disabled={searchMatches.length === 0}
+                            aria-label="Previous search result"
+                            className="p-1.5 rounded border border-border text-muted hover:text-text hover:bg-muted/10 disabled:opacity-40"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => moveSearchResult(1)}
+                            disabled={searchMatches.length === 0}
+                            aria-label="Next search result"
+                            className="p-1.5 rounded border border-border text-muted hover:text-text hover:bg-muted/10 disabled:opacity-40"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!activeMatch}
+                            className="px-2 py-1.5 rounded bg-primary text-background text-xs font-bold flex items-center gap-1.5 disabled:opacity-40"
+                        >
+                            <LocateFixed size={13} /> Focus
+                        </button>
+                    </form>
+                </Panel>
 
                 <Panel position="top-right" className="flex flex-col gap-2 items-end">
                     <div className="bg-surface/80 backdrop-blur p-2 rounded-lg border border-border flex gap-2">

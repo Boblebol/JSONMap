@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Node inspector for graph selection, path/type/value review, and JSON scalar editing.
 - In-memory document snapshots with restore, export, and original/current diff preview.
 - Snapshot-to-snapshot comparison in the version panel.
+- Graph node search with result navigation and focus.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed
