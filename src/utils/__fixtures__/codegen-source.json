@@ -1,0 +1,14 @@
+{
+  "name": "JSONMap",
+  "version": "1.0.0",
+  "features": [
+    {
+      "id": "graph",
+      "enabled": true
+    }
+  ],
+  "settings": {
+    "theme": "dark",
+    "maxNodes": 1000
+  }
+}

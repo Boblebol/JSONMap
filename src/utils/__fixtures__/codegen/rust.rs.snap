@@ -1,0 +1,40 @@
+// Example code that deserializes and serializes the model.
+// extern crate serde;
+// #[macro_use]
+// extern crate serde_derive;
+// extern crate serde_json;
+//
+// use generated_module::Root;
+//
+// fn main() {
+//     let json = r#"{"answer": 42}"#;
+//     let model: Root = serde_json::from_str(&json).unwrap();
+// }
+
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Root {
+    pub name: String,
+
+    pub version: String,
+
+    pub features: Vec<Feature>,
+
+    pub settings: Settings,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Feature {
+    pub id: String,
+
+    pub enabled: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Settings {
+    pub theme: String,
+
+    pub max_nodes: i64,
+}

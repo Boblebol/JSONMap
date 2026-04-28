@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import {
-    quicktype,
-    InputData,
-    jsonInputForTargetLanguage
-} from 'quicktype-core';
 import { CodeEditor } from '../Editor/CodeEditor';
 import { Copy, Check, FilePlus2 } from 'lucide-react';
 import type { FileFormat } from '../../utils/tauri';
+import {
+    CODEGEN_LANGUAGES,
+    generateCodeFromJson,
+    getEditorLanguage,
+    getGeneratedDocumentFormat,
+    getGeneratedDocumentName,
+    type CodegenLanguage,
+} from '../../utils/codegen';
 
 interface CodeGenPanelProps {
     content: string;
@@ -14,47 +17,8 @@ interface CodeGenPanelProps {
     onCreateDocument?: (content: string, options: { name: string; format: FileFormat }) => void;
 }
 
-const LANGUAGES = [
-    { id: 'typescript', label: 'TypeScript' },
-    { id: 'rust', label: 'Rust' },
-    { id: 'go', label: 'Go' },
-    { id: 'python', label: 'Python' },
-    { id: 'pydantic', label: 'Pydantic v2' },
-    { id: 'csharp', label: 'C#' },
-    { id: 'java', label: 'Java' },
-    { id: 'swift', label: 'Swift' },
-];
-
-const stripKnownExtension = (name: string) => name.replace(/(\.pydantic)?\.(json|yaml|yml|xml|toml|csv|ts|py|go|rs)$/i, '');
-
-const getGeneratedDocumentName = (sourceName: string | undefined, lang: string) => {
-    const baseName = sourceName ? stripKnownExtension(sourceName) : 'Generated types';
-    const extension = lang === 'typescript' ? 'ts' : lang === 'python' ? 'py' : lang === 'pydantic' ? 'pydantic.py' : lang === 'go' ? 'go' : lang === 'rust' ? 'rs' : 'txt';
-    return `${baseName}.${extension}`;
-};
-
-const getGeneratedDocumentFormat = (lang: string): FileFormat | null => {
-    if (lang === 'typescript') return 'typescript';
-    if (lang === 'python' || lang === 'pydantic') return 'python';
-    if (lang === 'go') return 'go';
-    if (lang === 'rust') return 'rust';
-    return null;
-};
-
-const getQuicktypeLanguage = (lang: string) => lang === 'pydantic' ? 'python' : lang;
-
-const getRendererOptions = (lang: string) => ({
-    "just-types": "true",
-    "package": "json_map",
-    ...(lang === 'python' || lang === 'pydantic' ? { "python-version": "3.7" } : {}),
-    ...(lang === 'pydantic' ? { "pydantic-base-model": "true" } : {}),
-    ...(lang === 'rust' ? { "derive-debug": "true", visibility: "public" } : {}),
-});
-
-const getEditorLanguage = (lang: string) => lang === 'pydantic' ? 'python' : lang === 'typescript' ? 'typescript' : lang;
-
 export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenPanelProps) => {
-    const [lang, setLang] = useState('typescript');
+    const [lang, setLang] = useState<CodegenLanguage>('typescript');
     const [output, setOutput] = useState('');
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -64,23 +28,7 @@ export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenP
         const generate = async () => {
             setLoading(true);
             try {
-                const quicktypeLanguage = getQuicktypeLanguage(lang);
-                const jsonInput = jsonInputForTargetLanguage(quicktypeLanguage as any);
-                await jsonInput.addSource({
-                    name: "Root",
-                    samples: [content],
-                });
-
-                const inputData = new InputData();
-                inputData.addInput(jsonInput);
-
-                const { lines } = await quicktype({
-                    inputData,
-                    lang: quicktypeLanguage as any,
-                    rendererOptions: getRendererOptions(lang),
-                });
-
-                setOutput(lines.join('\n'));
+                setOutput(await generateCodeFromJson(content, lang));
             } catch (e) {
                 setOutput(`Error generating code: ${e}`);
             } finally {
@@ -116,10 +64,10 @@ export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenP
                     <span className="text-sm font-semibold">Target Language:</span>
                     <select
                         value={lang}
-                        onChange={(e) => setLang(e.target.value)}
+                        onChange={(e) => setLang(e.target.value as CodegenLanguage)}
                         className="bg-background border border-border rounded px-2 py-1 text-sm text-text"
                     >
-                        {LANGUAGES.map(l => (
+                        {CODEGEN_LANGUAGES.map(l => (
                             <option key={l.id} value={l.id}>{l.label}</option>
                         ))}
                     </select>

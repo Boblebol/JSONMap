@@ -1,0 +1,19 @@
+from pydantic import BaseModel
+from typing import List
+
+
+class Feature(BaseModel):
+    id: str
+    enabled: bool
+
+
+class Settings(BaseModel):
+    theme: str
+    max_nodes: int
+
+
+class Root(BaseModel):
+    name: str
+    version: str
+    features: List[Feature]
+    settings: Settings

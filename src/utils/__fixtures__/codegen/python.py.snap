@@ -1,0 +1,22 @@
+from dataclasses import dataclass
+from typing import List
+
+
+@dataclass
+class Feature:
+    id: str
+    enabled: bool
+
+
+@dataclass
+class Settings:
+    theme: str
+    max_nodes: int
+
+
+@dataclass
+class Root:
+    name: str
+    version: str
+    features: List[Feature]
+    settings: Settings

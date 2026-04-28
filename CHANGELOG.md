@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go struct generation action that creates generated types as a selected `.go` workspace document.
 - Rust serde generation action that creates generated types as a selected `.rs` workspace document.
 - JSON Schema generation action that validates the active document and creates schema output as a selected `.schema.json` workspace document.
+- Stable fixture snapshots for generated TypeScript, Python dataclass, Pydantic v2, Go, and Rust serde outputs.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed

@@ -1,0 +1,16 @@
+type Root struct {
+	Name     string    `json:"name"`
+	Version  string    `json:"version"`
+	Features []Feature `json:"features"`
+	Settings Settings  `json:"settings"`
+}
+
+type Feature struct {
+	ID      string `json:"id"`
+	Enabled bool   `json:"enabled"`
+}
+
+type Settings struct {
+	Theme    string `json:"theme"`
+	MaxNodes int64  `json:"maxNodes"`
+}
