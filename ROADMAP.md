@@ -288,7 +288,7 @@ Tickets use the following format:
 | ID | Type | Priority | Title | Acceptance Criteria |
 | --- | --- | --- | --- | --- |
 | JM-042 | feature | P0 | Add conversion workspace action | Users can convert the active document to JSON, YAML, TOML, XML, or CSV and create the result as a selected in-memory document. |
-| JM-043 | feature | P0 | Add TypeScript generation | Generated TypeScript handles nested objects and arrays. |
+| JM-043 | feature | P0 | Add TypeScript generation | Generated TypeScript handles nested objects and arrays and can be created as a selected `.ts` workspace document. |
 | JM-044 | feature | P0 | Add Python dataclass generation | Generated dataclasses are valid Python syntax. |
 | JM-045 | feature | P0 | Add Pydantic v2 generation | Generated models use Pydantic v2 conventions. |
 | JM-046 | feature | P1 | Add Go struct generation | Generated Go types are formatted and usable. |

@@ -54,12 +54,15 @@ const inferFormatFromName = (name: string): FileFormat => {
   if (ext === 'xml') return 'xml';
   if (ext === 'toml') return 'toml';
   if (ext === 'csv') return 'csv';
+  if (ext === 'ts') return 'typescript';
   return 'json';
 };
 
 const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;
 
-const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv)$/i, '');
+const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts)$/i, '');
+
+const hasKnownExtension = (name: string) => /\.(json|yaml|yml|xml|toml|csv|ts)$/i.test(name);
 
 const sanitizeFileSegment = (value: string) => value
   .trim()
@@ -67,7 +70,15 @@ const sanitizeFileSegment = (value: string) => value
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || 'snapshot';
 
-const getSnapshotExtension = (format: FileFormat) => format === 'yaml' ? 'yaml' : format;
+const getDocumentExtension = (format: FileFormat) => format === 'yaml' ? 'yaml' : format === 'typescript' ? 'ts' : format;
+
+const getSnapshotExtension = (format: FileFormat) => getDocumentExtension(format);
+
+const getEditorLanguage = (format: FileFormat) => {
+  if (format === 'json') return 'json';
+  if (format === 'typescript') return 'typescript';
+  return 'yaml';
+};
 
 const getPathFileSegment = (path: (string | number)[]) => (
   path.length === 0
@@ -279,9 +290,11 @@ function App() {
     try {
       const currentContent = contentRef.current;
       const currentDocument = activeDocumentRef.current;
-      const filename = currentDocument?.name.endsWith('.json')
-        ? currentDocument.name
-        : `${currentDocument?.name || 'document'}.json`;
+      const currentFormat = formatRef.current;
+      const baseName = currentDocument?.name || 'document';
+      const filename = hasKnownExtension(baseName)
+        ? baseName
+        : `${baseName}.${getDocumentExtension(currentFormat)}`;
 
       if (!window.__TAURI__) {
         download(currentContent, filename, 'application/json');
@@ -642,13 +655,14 @@ function App() {
                     <option value="xml">XML</option>
                     <option value="toml">TOML</option>
                     <option value="csv">CSV</option>
+                    <option value="typescript">TypeScript</option>
                   </select>
                 </div>
               </div>
               <div className="flex-1 relative">
                 <CodeEditor
                   value={content}
-                  language={format === 'json' ? 'json' : 'yaml'}
+                  language={getEditorLanguage(format)}
                   onChange={handleContentChange}
                 />
                 {error && (
@@ -695,7 +709,11 @@ function App() {
         )}
 
         {activeTab === 'codegen' && (
-          <CodeGenPanel content={content} />
+          <CodeGenPanel
+            content={content}
+            sourceName={activeDocument?.name}
+            onCreateDocument={handleCreateToolDocument}
+          />
         )}
 
         {activeTab === 'schema' && (

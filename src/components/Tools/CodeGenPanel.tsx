@@ -5,10 +5,13 @@ import {
     jsonInputForTargetLanguage
 } from 'quicktype-core';
 import { CodeEditor } from '../Editor/CodeEditor';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, FilePlus2 } from 'lucide-react';
+import type { FileFormat } from '../../utils/tauri';
 
 interface CodeGenPanelProps {
     content: string;
+    sourceName?: string;
+    onCreateDocument?: (content: string, options: { name: string; format: FileFormat }) => void;
 }
 
 const LANGUAGES = [
@@ -21,11 +24,25 @@ const LANGUAGES = [
     { id: 'swift', label: 'Swift' },
 ];
 
-export const CodeGenPanel = ({ content }: CodeGenPanelProps) => {
+const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts)$/i, '');
+
+const getGeneratedDocumentName = (sourceName: string | undefined, lang: string) => {
+    const baseName = sourceName ? stripKnownExtension(sourceName) : 'Generated types';
+    const extension = lang === 'typescript' ? 'ts' : 'txt';
+    return `${baseName}.${extension}`;
+};
+
+const getGeneratedDocumentFormat = (lang: string): FileFormat | null => {
+    if (lang === 'typescript') return 'typescript';
+    return null;
+};
+
+export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenPanelProps) => {
     const [lang, setLang] = useState('typescript');
     const [output, setOutput] = useState('');
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const outputFormat = getGeneratedDocumentFormat(lang);
 
     useEffect(() => {
         const generate = async () => {
@@ -69,6 +86,15 @@ export const CodeGenPanel = ({ content }: CodeGenPanelProps) => {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const createGeneratedDocument = () => {
+        if (!output || !onCreateDocument || !outputFormat) return;
+
+        onCreateDocument(output, {
+            format: outputFormat,
+            name: getGeneratedDocumentName(sourceName, lang),
+        });
+    };
+
     return (
         <div className="flex flex-col h-full bg-surface">
             <div className="flex items-center justify-between p-2 border-b border-border">
@@ -84,13 +110,24 @@ export const CodeGenPanel = ({ content }: CodeGenPanelProps) => {
                         ))}
                     </select>
                 </div>
-                <button
-                    onClick={copyToClipboard}
-                    className="p-1.5 rounded hover:bg-muted/20 text-muted hover:text-text transition-colors"
-                    title="Copy code"
-                >
-                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                </button>
+                <div className="flex items-center gap-2">
+                    {onCreateDocument && outputFormat && (
+                        <button
+                            onClick={createGeneratedDocument}
+                            disabled={!output}
+                            className="rounded bg-primary px-2 py-1.5 text-xs font-bold text-background hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
+                        >
+                            <FilePlus2 size={14} /> Create document
+                        </button>
+                    )}
+                    <button
+                        onClick={copyToClipboard}
+                        className="p-1.5 rounded hover:bg-muted/20 text-muted hover:text-text transition-colors"
+                        title="Copy code"
+                    >
+                        {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 relative">

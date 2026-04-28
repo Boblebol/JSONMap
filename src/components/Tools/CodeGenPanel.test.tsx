@@ -51,4 +51,27 @@ describe('CodeGenPanel', () => {
 
         expect(writeText).toHaveBeenCalled();
     });
+
+    it('creates a TypeScript workspace document from generated code', async () => {
+        const onCreateDocument = vi.fn();
+
+        render(
+            <CodeGenPanel
+                content='{"items":[{"name":"test"}],"meta":{"count":1}}'
+                sourceName="payload.json"
+                onCreateDocument={onCreateDocument}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('code-editor')).toHaveTextContent('interface Root {');
+        });
+
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(onCreateDocument).toHaveBeenCalledWith('interface Root {\n  name: string;\n}', {
+            format: 'typescript',
+            name: 'payload.ts',
+        });
+    });
 });

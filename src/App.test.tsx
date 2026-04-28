@@ -61,7 +61,14 @@ vi.mock('./components/Help/ShortcutOverlay', () => ({
 }));
 
 vi.mock('./components/Tools/CodeGenPanel', () => ({
-    CodeGenPanel: () => <div>Code generation panel</div>,
+    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' }) => void }) => (
+        <div>
+            Code generation panel
+            <button onClick={() => onCreateDocument?.('export interface Root {}', { name: 'Sample JSON.ts', format: 'typescript' })}>
+                Create TypeScript document
+            </button>
+        </div>
+    ),
 }));
 
 vi.mock('./components/Tools/SchemaPanel', () => ({
@@ -307,6 +314,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Sample JSON.yaml')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('name: JSONMap');
+    });
+
+    it('adds generated TypeScript as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Code Generation'));
+        fireEvent.click(screen.getByText('Create TypeScript document'));
+
+        expect(await screen.findByText('Sample JSON.ts')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('export interface Root {}');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {
