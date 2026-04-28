@@ -57,14 +57,15 @@ const inferFormatFromName = (name: string): FileFormat => {
   if (ext === 'ts') return 'typescript';
   if (ext === 'py') return 'python';
   if (ext === 'go') return 'go';
+  if (ext === 'rs') return 'rust';
   return 'json';
 };
 
 const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;
 
-const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts|py|go)$/i, '');
+const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts|py|go|rs)$/i, '');
 
-const hasKnownExtension = (name: string) => /\.(json|yaml|yml|xml|toml|csv|ts|py|go)$/i.test(name);
+const hasKnownExtension = (name: string) => /\.(json|yaml|yml|xml|toml|csv|ts|py|go|rs)$/i.test(name);
 
 const sanitizeFileSegment = (value: string) => value
   .trim()
@@ -73,7 +74,7 @@ const sanitizeFileSegment = (value: string) => value
   .replace(/^-+|-+$/g, '') || 'snapshot';
 
 const getDocumentExtension = (format: FileFormat) => (
-  format === 'yaml' ? 'yaml' : format === 'typescript' ? 'ts' : format === 'python' ? 'py' : format
+  format === 'yaml' ? 'yaml' : format === 'typescript' ? 'ts' : format === 'python' ? 'py' : format === 'rust' ? 'rs' : format
 );
 
 const getSnapshotExtension = (format: FileFormat) => getDocumentExtension(format);
@@ -83,6 +84,7 @@ const getEditorLanguage = (format: FileFormat) => {
   if (format === 'typescript') return 'typescript';
   if (format === 'python') return 'python';
   if (format === 'go') return 'go';
+  if (format === 'rust') return 'rust';
   return 'yaml';
 };
 
@@ -664,6 +666,7 @@ function App() {
                     <option value="typescript">TypeScript</option>
                     <option value="python">Python</option>
                     <option value="go">Go</option>
+                    <option value="rust">Rust</option>
                   </select>
                 </div>
               </div>

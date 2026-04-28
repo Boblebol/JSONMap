@@ -61,7 +61,7 @@ vi.mock('./components/Help/ShortcutOverlay', () => ({
 }));
 
 vi.mock('./components/Tools/CodeGenPanel', () => ({
-    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' | 'python' | 'go' }) => void }) => (
+    CodeGenPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'typescript' | 'python' | 'go' | 'rust' }) => void }) => (
         <div>
             Code generation panel
             <button onClick={() => onCreateDocument?.('export interface Root {}', { name: 'Sample JSON.ts', format: 'typescript' })}>
@@ -75,6 +75,9 @@ vi.mock('./components/Tools/CodeGenPanel', () => ({
             </button>
             <button onClick={() => onCreateDocument?.('type Root struct {}', { name: 'Sample JSON.go', format: 'go' })}>
                 Create Go document
+            </button>
+            <button onClick={() => onCreateDocument?.('pub struct Root {}', { name: 'Sample JSON.rs', format: 'rust' })}>
+                Create Rust document
             </button>
         </div>
     ),
@@ -367,6 +370,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Sample JSON.go')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('type Root struct {}');
+    });
+
+    it('adds generated Rust serde structs as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Code Generation'));
+        fireEvent.click(screen.getByText('Create Rust document'));
+
+        expect(await screen.findByText('Sample JSON.rs')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('pub struct Root {}');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {

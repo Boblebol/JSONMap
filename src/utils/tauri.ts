@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 
-export type FileFormat = 'json' | 'yaml' | 'xml' | 'toml' | 'csv' | 'typescript' | 'python' | 'go';
+export type FileFormat = 'json' | 'yaml' | 'xml' | 'toml' | 'csv' | 'typescript' | 'python' | 'go' | 'rust';
 
 export const tauriApi = {
     parseContent: async (content: string, format: string): Promise<any> => {
@@ -73,7 +73,7 @@ export const tauriApi = {
                 multiple: false,
                 filters: [{
                     name: 'Supported Files',
-                    extensions: ['json', 'yaml', 'yml', 'xml', 'toml', 'csv', 'ts', 'py', 'go']
+                    extensions: ['json', 'yaml', 'yml', 'xml', 'toml', 'csv', 'ts', 'py', 'go', 'rs']
                 }]
             });
 
@@ -89,6 +89,7 @@ export const tauriApi = {
                 if (ext === 'ts') format = 'typescript';
                 if (ext === 'py') format = 'python';
                 if (ext === 'go') format = 'go';
+                if (ext === 'rs') format = 'rust';
 
                 return { content, path, format };
             }
@@ -109,7 +110,7 @@ export const tauriApi = {
                 defaultPath: filename || 'untitled.json',
                 filters: [{
                     name: 'All Files',
-                    extensions: ['json', 'yaml', 'yml', 'xml', 'toml', 'csv', 'ts', 'py', 'go']
+                    extensions: ['json', 'yaml', 'yml', 'xml', 'toml', 'csv', 'ts', 'py', 'go', 'rs']
                 }]
             });
 

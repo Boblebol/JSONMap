@@ -18,6 +18,19 @@ vi.mock('quicktype-core', () => ({
             return Promise.resolve({ lines: ['type Root struct {', '    Name string `json:"name"`', '}'] });
         }
 
+        if (lang === 'rust') {
+            return Promise.resolve({
+                lines: [
+                    'use serde::{Serialize, Deserialize};',
+                    '',
+                    '#[derive(Debug, Serialize, Deserialize)]',
+                    'pub struct Root {',
+                    '    pub name: String,',
+                    '}',
+                ],
+            });
+        }
+
         return Promise.resolve({ lines: ['interface Root {', '  name: string;', '}'] });
     }),
     InputData: class {
@@ -187,6 +200,39 @@ describe('CodeGenPanel', () => {
         expect(onCreateDocument).toHaveBeenCalledWith('type Root struct {\n    Name string `json:"name"`\n}', {
             format: 'go',
             name: 'payload.go',
+        });
+    });
+
+    it('creates a Rust serde workspace document from generated structs', async () => {
+        const onCreateDocument = vi.fn();
+
+        render(
+            <CodeGenPanel
+                content='{"name":"test"}'
+                sourceName="payload.json"
+                onCreateDocument={onCreateDocument}
+            />
+        );
+
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'rust' } });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('code-editor')).toHaveTextContent('#[derive(Debug, Serialize, Deserialize)]');
+        });
+
+        expect(quicktype).toHaveBeenLastCalledWith(expect.objectContaining({
+            lang: 'rust',
+            rendererOptions: expect.objectContaining({
+                'derive-debug': 'true',
+                visibility: 'public',
+            }),
+        }));
+
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(onCreateDocument).toHaveBeenCalledWith('use serde::{Serialize, Deserialize};\n\n#[derive(Debug, Serialize, Deserialize)]\npub struct Root {\n    pub name: String,\n}', {
+            format: 'rust',
+            name: 'payload.rs',
         });
     });
 });

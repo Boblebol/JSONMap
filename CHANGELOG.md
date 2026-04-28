@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Python dataclass generation action that creates generated models as a selected `.py` workspace document.
 - Pydantic v2 generation action that creates generated models as a selected `.pydantic.py` workspace document.
 - Go struct generation action that creates generated types as a selected `.go` workspace document.
+- Rust serde generation action that creates generated types as a selected `.rs` workspace document.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed
