@@ -268,8 +268,8 @@ function App() {
     }
   }, []);
 
-  const handleCreateSnapshot = useCallback(() => {
-    setWorkspace(currentWorkspace => createActiveDocumentSnapshot(currentWorkspace));
+  const handleCreateSnapshot = useCallback((name?: string) => {
+    setWorkspace(currentWorkspace => createActiveDocumentSnapshot(currentWorkspace, { name }));
   }, []);
 
   const handleRestoreSnapshot = useCallback((snapshotId: string) => {

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Snapshot-to-snapshot comparison in the version panel.
 - Graph node search with result navigation and focus.
 - Explicit graph branch collapse and expand controls for the selected node.
+- Manual snapshot naming with named snapshot export filenames.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed

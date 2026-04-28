@@ -6,7 +6,7 @@ import { createLineDiffPreview } from '../../utils/contentDiff';
 interface VersionPanelProps {
     document: WorkspaceDocument | null;
     diffPreview: string;
-    onCreateSnapshot: () => void;
+    onCreateSnapshot: (name?: string) => void;
     onRestoreSnapshot: (snapshotId: string) => void;
     onExportSnapshot: (snapshotId: string) => void;
 }
@@ -19,6 +19,7 @@ export const VersionPanel = ({
     onExportSnapshot,
 }: VersionPanelProps) => {
     const snapshots = document?.snapshots ?? [];
+    const [snapshotName, setSnapshotName] = useState('');
     const [baseSnapshotId, setBaseSnapshotId] = useState('');
     const [compareSnapshotId, setCompareSnapshotId] = useState('');
     const diffLines = diffPreview.split('\n');
@@ -28,6 +29,10 @@ export const VersionPanel = ({
         if (!baseSnapshot || !compareSnapshot) return [];
         return createLineDiffPreview(baseSnapshot.content, compareSnapshot.content).split('\n');
     }, [baseSnapshot, compareSnapshot]);
+    const handleCreateSnapshot = () => {
+        onCreateSnapshot(snapshotName.trim() || undefined);
+        setSnapshotName('');
+    };
 
     return (
         <section className="border-t border-border bg-background flex flex-col min-h-0">
@@ -39,10 +44,20 @@ export const VersionPanel = ({
                     </div>
                     <span className="text-[10px] text-muted">{snapshots.length}</span>
                 </div>
-                <button
-                    onClick={onCreateSnapshot}
+                <label htmlFor="snapshot-name" className="sr-only">Snapshot name</label>
+                <input
+                    id="snapshot-name"
+                    aria-label="Snapshot name"
+                    value={snapshotName}
+                    onChange={(event) => setSnapshotName(event.target.value)}
                     disabled={!document}
-                    className="mt-3 w-full bg-primary text-background rounded px-3 py-2 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
+                    placeholder={`Snapshot ${snapshots.length + 1}`}
+                    className="mt-3 w-full bg-surface border border-border rounded px-3 py-2 text-xs text-text focus:outline-none focus:border-primary disabled:opacity-40"
+                />
+                <button
+                    onClick={handleCreateSnapshot}
+                    disabled={!document}
+                    className="mt-2 w-full bg-primary text-background rounded px-3 py-2 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                     <Save size={14} /> Save snapshot
                 </button>

@@ -85,6 +85,26 @@ describe('VersionPanel', () => {
         expect(onExportSnapshot).toHaveBeenCalledWith('snapshot-1');
     });
 
+    it('creates snapshots with a manual name and clears the input', () => {
+        const onCreateSnapshot = vi.fn();
+
+        render(
+            <VersionPanel
+                document={documentWithSnapshot}
+                diffPreview={"- before\n+ after"}
+                onCreateSnapshot={onCreateSnapshot}
+                onRestoreSnapshot={() => { }}
+                onExportSnapshot={() => { }}
+            />
+        );
+
+        fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Release candidate' } });
+        fireEvent.click(screen.getByText('Save snapshot'));
+
+        expect(onCreateSnapshot).toHaveBeenCalledWith('Release candidate');
+        expect(screen.getByLabelText('Snapshot name')).toHaveDisplayValue('');
+    });
+
     it('compares two snapshots when at least two versions exist', () => {
         render(
             <VersionPanel

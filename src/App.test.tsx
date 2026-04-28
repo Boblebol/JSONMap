@@ -195,6 +195,31 @@ describe('App workspace', () => {
         expect(download).toHaveBeenCalledWith('{"name":"snapshot"}', 'payload-snapshot-1.json', 'application/json');
     });
 
+    it('creates snapshots with a manual name and uses it for export filenames', async () => {
+        const { container } = render(<App />);
+        const file = new File(['{"name":"before"}'], 'payload.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"name":"before"}');
+        });
+
+        fireEvent.change(screen.getByLabelText('active-document-editor'), { target: { value: '{"name":"named"}' } });
+        fireEvent.change(screen.getByLabelText('Snapshot name'), { target: { value: 'Release Candidate' } });
+        fireEvent.click(screen.getByText('Save snapshot'));
+
+        expect(await screen.findByText('Release Candidate')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByLabelText('Export Release Candidate'));
+
+        expect(download).toHaveBeenCalledWith('{"name":"named"}', 'payload-release-candidate.json', 'application/json');
+    });
+
     it('compares two snapshots created from the active document', async () => {
         const { container } = render(<App />);
         const file = new File(['{"name":"before"}'], 'payload.json', { type: 'application/json' });
