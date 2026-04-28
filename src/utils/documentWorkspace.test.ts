@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
     addDocuments,
     createDocument,
+    createActiveDocumentSnapshot,
     createWorkspace,
+    getActiveDocumentSnapshot,
     resetActiveDocument,
+    restoreActiveDocumentSnapshot,
     setActiveDocument,
     updateActiveDocumentContent,
 } from './documentWorkspace';
@@ -26,6 +29,7 @@ describe('documentWorkspace', () => {
             originalContent: '{"name":"JSONMap"}',
             currentContent: '{"name":"JSONMap"}',
             dirty: false,
+            snapshots: [],
         });
     });
 
@@ -82,5 +86,66 @@ describe('documentWorkspace', () => {
         expect(reset.documents[0].currentContent).toBe('{"one":1}');
         expect(reset.documents[1].currentContent).toBe('{"two":2}');
         expect(reset.documents[1].dirty).toBe(false);
+    });
+
+    it('creates a named snapshot from the active document current content', () => {
+        const workspace = addDocuments(
+            createWorkspace(),
+            [createDocument({ id: 'doc-1', name: 'payload.json', content: '{"name":"before"}', format: 'json' })]
+        );
+        const changed = updateActiveDocumentContent(workspace, '{"name":"after"}');
+
+        const snapshotted = createActiveDocumentSnapshot(changed, {
+            id: 'snapshot-1',
+            name: 'Edited name',
+            createdAt: '2026-04-28T10:30:00.000Z',
+        });
+
+        expect(snapshotted.documents[0].snapshots).toEqual([
+            {
+                id: 'snapshot-1',
+                name: 'Edited name',
+                content: '{"name":"after"}',
+                format: 'json',
+                createdAt: '2026-04-28T10:30:00.000Z',
+            }
+        ]);
+    });
+
+    it('restores an active document snapshot and updates dirty state against the original', () => {
+        const workspace = addDocuments(
+            createWorkspace(),
+            [createDocument({ id: 'doc-1', name: 'payload.json', content: '{"name":"before"}', format: 'json' })]
+        );
+        const snapshotted = createActiveDocumentSnapshot(
+            updateActiveDocumentContent(workspace, '{"name":"snapshot"}'),
+            {
+                id: 'snapshot-1',
+                name: 'Snapshot',
+                createdAt: '2026-04-28T10:30:00.000Z',
+            }
+        );
+        const changedAgain = updateActiveDocumentContent(snapshotted, '{"name":"after"}');
+
+        const restored = restoreActiveDocumentSnapshot(changedAgain, 'snapshot-1');
+
+        expect(restored.documents[0].currentContent).toBe('{"name":"snapshot"}');
+        expect(restored.documents[0].dirty).toBe(true);
+    });
+
+    it('returns a snapshot for the active document by id', () => {
+        const workspace = addDocuments(
+            createWorkspace(),
+            [createDocument({ id: 'doc-1', name: 'payload.json', content: '{"name":"before"}', format: 'json' })]
+        );
+        const snapshotted = createActiveDocumentSnapshot(workspace, {
+            id: 'snapshot-1',
+            name: 'Original checkpoint',
+            createdAt: '2026-04-28T10:30:00.000Z',
+        });
+
+        const snapshot = getActiveDocumentSnapshot(snapshotted, 'snapshot-1');
+
+        expect(snapshot?.content).toBe('{"name":"before"}');
     });
 });

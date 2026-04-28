@@ -163,4 +163,35 @@ describe('App workspace', () => {
             expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{\n  "name": "after"\n}');
         });
     });
+
+    it('creates, restores, and exports document snapshots from the version panel', async () => {
+        const { container } = render(<App />);
+        const file = new File(['{"name":"before"}'], 'payload.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"name":"before"}');
+        });
+
+        fireEvent.change(screen.getByLabelText('active-document-editor'), { target: { value: '{"name":"snapshot"}' } });
+        fireEvent.click(screen.getByText('Save snapshot'));
+
+        expect(await screen.findByText('Snapshot 1')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('active-document-editor'), { target: { value: '{"name":"after"}' } });
+        fireEvent.click(screen.getByLabelText('Restore Snapshot 1'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"name":"snapshot"}');
+        });
+
+        fireEvent.click(screen.getByLabelText('Export Snapshot 1'));
+
+        expect(download).toHaveBeenCalledWith('{"name":"snapshot"}', 'payload-snapshot-1.json', 'application/json');
+    });
 });

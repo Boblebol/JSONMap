@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drag and drop import for local files in the web shell.
 - Active document reset and export controls.
 - Node inspector for graph selection, path/type/value review, and JSON scalar editing.
+- In-memory document snapshots with restore, export, and original/current diff preview.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed

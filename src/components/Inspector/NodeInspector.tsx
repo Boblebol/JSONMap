@@ -39,7 +39,7 @@ export const NodeInspector = ({ selectedNode, format, onValueUpdate }: NodeInspe
 
     if (!selectedNode || !data) {
         return (
-            <aside className="w-72 border-l border-border bg-background flex flex-col items-center justify-center p-6 text-center">
+            <aside className="w-full h-full bg-background flex flex-col items-center justify-center p-6 text-center">
                 <Box size={28} className="text-muted mb-3" />
                 <h3 className="text-sm font-semibold text-text mb-1">Select a node</h3>
                 <p className="text-xs text-muted leading-relaxed">Click any graph node to inspect its path, type, and value.</p>
@@ -55,7 +55,7 @@ export const NodeInspector = ({ selectedNode, format, onValueUpdate }: NodeInspe
     };
 
     return (
-        <aside className="w-72 border-l border-border bg-background flex flex-col overflow-hidden">
+        <aside className="w-full h-full bg-background flex flex-col overflow-hidden">
             <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-2 text-primary mb-2">
                     <Info size={16} />

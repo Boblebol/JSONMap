@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { CodeEditor } from './components/Editor/CodeEditor';
 import { GraphView } from './components/Graph/GraphView';
 import { NodeInspector } from './components/Inspector/NodeInspector';
+import { VersionPanel } from './components/Versions/VersionPanel';
 import { jsonToGraph } from './utils/graphTransform';
 import { FileFormat, tauriApi } from './utils/tauri';
 import type { Node, Edge } from 'reactflow';
@@ -17,12 +18,16 @@ import { ShortcutOverlay } from './components/Help/ShortcutOverlay';
 import { SchemaPanel } from './components/Tools/SchemaPanel';
 import { AboutModal } from './components/About/AboutModal';
 import { updateValueByPath } from './utils/jsonUtils';
+import { createLineDiffPreview } from './utils/contentDiff';
 import {
   addDocuments,
   createDocument,
+  createActiveDocumentSnapshot,
   createWorkspace,
   getActiveDocument,
+  getActiveDocumentSnapshot,
   resetActiveDocument,
+  restoreActiveDocumentSnapshot,
   setActiveDocument,
   updateActiveDocumentContent,
   WorkspaceDocument,
@@ -52,6 +57,16 @@ const inferFormatFromName = (name: string): FileFormat => {
 };
 
 const getFileName = (path: string) => path.split(/[\\/]/).pop() || path;
+
+const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv)$/i, '');
+
+const sanitizeFileSegment = (value: string) => value
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '') || 'snapshot';
+
+const getSnapshotExtension = (format: FileFormat) => format === 'yaml' ? 'yaml' : format;
 
 const readDroppedFileContent = (file: File): Promise<string> => {
   if (typeof file.text === 'function') {
@@ -93,6 +108,10 @@ function App() {
   const content = activeDocument?.currentContent ?? '';
   const format = activeDocument?.format ?? 'json';
   const isDirty = activeDocument?.dirty ?? false;
+  const diffPreview = useMemo(() => {
+    if (!activeDocument) return 'No changes';
+    return createLineDiffPreview(activeDocument.originalContent, activeDocument.currentContent);
+  }, [activeDocument]);
 
   // Use refs for handlers that need latest state without re-triggering effects
   const contentRef = useRef(content);
@@ -248,6 +267,40 @@ function App() {
       setError("Failed to save file: " + e.message);
     }
   }, []);
+
+  const handleCreateSnapshot = useCallback(() => {
+    setWorkspace(currentWorkspace => createActiveDocumentSnapshot(currentWorkspace));
+  }, []);
+
+  const handleRestoreSnapshot = useCallback((snapshotId: string) => {
+    setWorkspace(currentWorkspace => restoreActiveDocumentSnapshot(currentWorkspace, snapshotId));
+    setError(null);
+  }, []);
+
+  const handleExportSnapshot = useCallback(async (snapshotId: string) => {
+    try {
+      const snapshot = getActiveDocumentSnapshot(workspace, snapshotId);
+      const currentDocument = activeDocumentRef.current;
+      if (!snapshot || !currentDocument) return;
+
+      const baseName = stripKnownExtension(currentDocument.name);
+      const filename = `${baseName}-${sanitizeFileSegment(snapshot.name)}.${getSnapshotExtension(snapshot.format)}`;
+      const mimeType = snapshot.format === 'json' ? 'application/json' : 'text/plain';
+
+      if (!window.__TAURI__) {
+        download(snapshot.content, filename, mimeType);
+        return;
+      }
+
+      const path = await tauriApi.saveFile(snapshot.content, filename);
+      if (path && window.__TAURI__) {
+        await tauriApi.showNotification("Snapshot Exported", `Successfully saved to ${path}`);
+      }
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to export snapshot: " + e.message);
+    }
+  }, [workspace]);
 
   const handleNodeUpdate = useCallback((path: (string | number)[], newValue: any) => {
     try {
@@ -525,11 +578,24 @@ function App() {
                   onNodeSelect={setSelectedNode}
                 />
               </div>
-              <NodeInspector
-                selectedNode={selectedNode}
-                format={format}
-                onValueUpdate={handleNodeUpdate}
-              />
+              <div className="w-80 shrink-0 border-l border-border bg-background flex flex-col min-h-0">
+                <div className="h-[42%] min-h-[240px] min-w-0">
+                  <NodeInspector
+                    selectedNode={selectedNode}
+                    format={format}
+                    onValueUpdate={handleNodeUpdate}
+                  />
+                </div>
+                <div className="flex-1 min-h-0">
+                  <VersionPanel
+                    document={activeDocument}
+                    diffPreview={diffPreview}
+                    onCreateSnapshot={handleCreateSnapshot}
+                    onRestoreSnapshot={handleRestoreSnapshot}
+                    onExportSnapshot={handleExportSnapshot}
+                  />
+                </div>
+              </div>
             </div>
           </>
         )}
