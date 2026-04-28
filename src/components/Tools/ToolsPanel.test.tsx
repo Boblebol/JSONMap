@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { ToolsPanel } from './ToolsPanel';
 import { tauriApi } from '../../utils/tauri';
 
@@ -25,6 +25,15 @@ vi.mock('../Editor/CodeEditor', () => ({
 }));
 
 describe('ToolsPanel', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        Object.assign(navigator, {
+            clipboard: {
+                writeText: vi.fn().mockResolvedValue(undefined),
+            },
+        });
+    });
+
     it('renders commands buttons', () => {
         render(<ToolsPanel content="{}" setContent={() => { }} setFormat={() => { }} />);
         expect(screen.getAllByText('Format & Validate')).not.toHaveLength(0);
@@ -70,6 +79,28 @@ describe('ToolsPanel', () => {
 
         await waitFor(() => {
             expect(tauriApi.runJq).toHaveBeenCalledWith('.foo', { foo: 1 });
+        });
+    });
+
+    it('copies a jq result and exposes it as a new document', async () => {
+        const onCreateDocument = vi.fn();
+        vi.mocked(tauriApi.runJq).mockResolvedValue({ foo: 1 });
+
+        render(<ToolsPanel content='{"foo":1}' setContent={() => { }} setFormat={() => { }} onCreateDocument={onCreateDocument} />);
+
+        fireEvent.click(screen.getByText('JQ Query'));
+        fireEvent.change(screen.getByLabelText('code-editor-jq'), { target: { value: '{foo: .foo}' } });
+        fireEvent.click(screen.getByText('Run'));
+
+        expect(await screen.findByText('Copy result')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Copy result'));
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith('{\n  "foo": 1\n}');
+        expect(onCreateDocument).toHaveBeenCalledWith('{\n  "foo": 1\n}', {
+            format: 'json',
+            name: 'JQ Result.json',
         });
     });
 

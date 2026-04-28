@@ -1,17 +1,36 @@
 import { useState } from 'react';
-import { tauriApi } from '../../utils/tauri';
+import { tauriApi, type FileFormat } from '../../utils/tauri';
 import { CodeEditor } from '../Editor/CodeEditor';
 import { beautifyJsonContent, formatJsonContent, minifyJsonContent, validateJsonContent } from '../../utils/jsonFormat';
-import { Play, Globe, Link, Search, Terminal, Fingerprint, Scissors, CheckCircle2, Braces, Minimize2 } from 'lucide-react';
+import { Play, Globe, Link, Search, Terminal, Fingerprint, Scissors, CheckCircle2, Braces, Minimize2, Copy, FilePlus2 } from 'lucide-react';
 
-export const ToolsPanel = ({ content, setContent, setFormat }: { content: string, setContent: (c: string) => void, setFormat: (f: string) => void }) => {
+interface ToolsPanelProps {
+    content: string;
+    setContent: (content: string) => void;
+    setFormat: (format: string) => void;
+    onCreateDocument?: (content: string, options: { name: string; format: FileFormat }) => void;
+}
+
+const serializeJsonResult = (value: unknown) => {
+    const serialized = JSON.stringify(value, null, 2);
+    return serialized === undefined ? String(value) : serialized;
+};
+
+export const ToolsPanel = ({ content, setContent, setFormat, onCreateDocument }: ToolsPanelProps) => {
     const [tool, setTool] = useState<'format' | 'jq' | 'jsonpath' | 'jwt' | 'anonymize' | 'url'>('format');
     const [input, setInput] = useState('');
     const [result, setResult] = useState('');
+    const [jqResultContent, setJqResultContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    const selectTool = (nextTool: typeof tool) => {
+        setTool(nextTool);
+        setJqResultContent(null);
+    };
 
     const handleImportUrl = async () => {
         setIsLoading(true);
+        setJqResultContent(null);
         try {
             const data = await tauriApi.fetchUrl(input);
             setContent(data);
@@ -35,23 +54,28 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
         try {
             const parsedContent = JSON.parse(content);
             const res = await tauriApi.runJq(input, parsedContent);
-            setResult(typeof res === 'string' ? res : JSON.stringify(res, null, 2));
+            const serialized = serializeJsonResult(res);
+            setResult(serialized);
+            setJqResultContent(serialized);
         } catch (e: any) {
+            setJqResultContent(null);
             setResult("JQ Error: " + e.toString());
         }
     };
 
     const runJsonPath = async () => {
+        setJqResultContent(null);
         try {
             const parsedContent = JSON.parse(content);
             const res = await tauriApi.runJsonPath(input, parsedContent);
-            setResult(JSON.stringify(res, null, 2));
+            setResult(serializeJsonResult(res));
         } catch (e: any) {
             setResult("JSONPath Error: " + e.toString());
         }
     };
 
     const decodeJwt = () => {
+        setJqResultContent(null);
         try {
             const parts = content.split('.');
             if (parts.length !== 3) throw new Error("Invalid JWT format");
@@ -64,6 +88,7 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
     };
 
     const anonymize = async () => {
+        setJqResultContent(null);
         try {
             const res = await tauriApi.anonymizeData(JSON.parse(content));
             setContent(JSON.stringify(res, null, 2));
@@ -74,10 +99,12 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
     };
 
     const validateJson = () => {
+        setJqResultContent(null);
         setResult(validateJsonContent(content).message);
     };
 
     const applyJsonTransform = (action: 'format' | 'beautify' | 'minify') => {
+        setJqResultContent(null);
         try {
             const nextContent = action === 'minify'
                 ? minifyJsonContent(content)
@@ -94,42 +121,62 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
         }
     };
 
+    const copyJqResult = async () => {
+        if (!jqResultContent) return;
+
+        try {
+            await navigator.clipboard.writeText(jqResultContent);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            setResult(`Copy error: ${message}`);
+        }
+    };
+
+    const createJqResultDocument = () => {
+        if (!jqResultContent || !onCreateDocument) return;
+
+        onCreateDocument(jqResultContent, {
+            format: 'json',
+            name: 'JQ Result.json',
+        });
+    };
+
     return (
         <div className="flex bg-background h-full w-full overflow-hidden">
             <div className="w-1/4 border-r border-border bg-surface p-4 flex flex-col gap-2">
                 <h3 className="text-xs font-bold text-muted uppercase mb-4 px-2">Tools</h3>
                 <button
-                    onClick={() => setTool('format')}
+                    onClick={() => selectTool('format')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'format' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
                 >
                     <Braces size={14} /> Format & Validate
                 </button>
                 <button
-                    onClick={() => setTool('jq')}
+                    onClick={() => selectTool('jq')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'jq' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
                 >
                     <Terminal size={14} /> JQ Query
                 </button>
                 <button
-                    onClick={() => setTool('jsonpath')}
+                    onClick={() => selectTool('jsonpath')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'jsonpath' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
                 >
                     <Search size={14} /> JSONPath
                 </button>
                 <button
-                    onClick={() => setTool('anonymize')}
+                    onClick={() => selectTool('anonymize')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'anonymize' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
                 >
                     <Scissors size={14} /> Anonymize
                 </button>
                 <button
-                    onClick={() => setTool('jwt')}
+                    onClick={() => selectTool('jwt')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'jwt' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
                 >
                     <Fingerprint size={14} /> JWT Decoder
                 </button>
                 <button
-                    onClick={() => setTool('url')}
+                    onClick={() => selectTool('url')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'url' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
                 >
                     <Globe size={14} /> URL Import
@@ -240,6 +287,24 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
                     <div className="flex-1 border border-border rounded-xl overflow-hidden bg-surface">
                         <CodeEditor value={result} onChange={() => { }} language="json" />
                     </div>
+
+                    {tool === 'jq' && jqResultContent && (
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={copyJqResult}
+                                className="rounded border border-border bg-surface px-3 py-2 text-xs font-bold text-text hover:bg-muted/10 flex items-center gap-2"
+                            >
+                                <Copy size={14} /> Copy result
+                            </button>
+                            <button
+                                onClick={createJqResultDocument}
+                                disabled={!onCreateDocument}
+                                className="rounded bg-primary px-3 py-2 text-xs font-bold text-background hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                <FilePlus2 size={14} /> Create document
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

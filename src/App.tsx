@@ -188,6 +188,18 @@ function App() {
     setIsDeveloperToolsOpen(false);
   }, []);
 
+  const handleCreateToolDocument = useCallback((nextContent: string, options: { name: string; format: FileFormat }) => {
+    const document = createDocument({
+      name: options.name,
+      content: nextContent,
+      format: options.format,
+    });
+
+    setWorkspace(currentWorkspace => setActiveDocument(addDocuments(currentWorkspace, [document]), document.id));
+    setActiveTab('visualizer');
+    setError(null);
+  }, []);
+
   const addImportedDocuments = useCallback((documents: WorkspaceDocument[]) => {
     if (documents.length === 0) return;
 
@@ -695,6 +707,7 @@ function App() {
             content={content}
             setContent={(nextContent) => setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, nextContent))}
             setFormat={handleFormatChange}
+            onCreateDocument={handleCreateToolDocument}
           />
         )}
 

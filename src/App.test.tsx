@@ -69,7 +69,14 @@ vi.mock('./components/Tools/SchemaPanel', () => ({
 }));
 
 vi.mock('./components/Tools/ToolsPanel', () => ({
-    ToolsPanel: () => <div>Tools panel</div>,
+    ToolsPanel: ({ onCreateDocument }: { onCreateDocument?: (content: string, options: { name: string, format: 'json' }) => void }) => (
+        <div>
+            Tools panel
+            <button onClick={() => onCreateDocument?.('{\n  "foo": 1\n}', { name: 'JQ Result.json', format: 'json' })}>
+                Create JQ document
+            </button>
+        </div>
+    ),
 }));
 
 vi.mock('./components/Converter/ConverterPanel', () => ({
@@ -245,6 +252,17 @@ describe('App workspace', () => {
 
         expect(screen.getByText('Tools panel')).toBeInTheDocument();
         expect(screen.queryByRole('dialog', { name: 'Developer tools' })).not.toBeInTheDocument();
+    });
+
+    it('adds developer tool output as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('JQ / JSONPath'));
+        fireEvent.click(screen.getByText('Create JQ document'));
+
+        expect(await screen.findByText('JQ Result.json')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{\n  "foo": 1\n}');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {
