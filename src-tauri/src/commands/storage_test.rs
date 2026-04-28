@@ -1,10 +1,8 @@
-// NOTE: Testing storage commands directly is tricky because they take AppHandle
-// and interact with tauri-plugin-store.
-// For now, these are placeholder tests illustrating how one might test them
-// if using tauri::test utilities or integration tests.
+// NOTE: Storage commands take AppHandle and interact with tauri-plugin-store,
+// so command behavior belongs in integration tests. This smoke test keeps the
+// module compiled under the unit-test target.
 
 #[test]
-fn test_storage_logic_compilation() {
-    // This is more of a smoke test to ensure the module compiles with tests enabled
+fn test_storage_module_compiles_with_tests_enabled() {
     assert!(true);
 }

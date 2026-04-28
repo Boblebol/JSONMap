@@ -68,8 +68,6 @@ Next focus: v1.8 performance work, starting with moving parsing off the React re
 |:---:|:---:|
 | <img src="docs/screenshots/graph-view.png" alt="Graph View" width="400" /> | <img src="docs/screenshots/editor-view.png" alt="Editor View" width="400" /> |
 
-*(Note: Screenshots are placeholders. Please add `graph-view.png` and `editor-view.png` to `docs/screenshots/`)*
-
 ## 📥 Installation
 
 1. Go to the [Releases page](https://github.com/Boblebol/JSONMap/releases).

@@ -1,8 +1,27 @@
 {
-  "name": "tauri-appjson-map",
+  "name": "jsonmap",
   "private": true,
+  "description": "Local-first desktop workspace for visualizing, editing, versioning, converting, and generating code from structured data.",
   "version": "1.1.2",
   "author": "Alexandre Enouf (Boblebol)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Boblebol/JSONMap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Boblebol/JSONMap/issues"
+  },
+  "homepage": "https://boblebol.github.io/JSONMap/",
+  "keywords": [
+    "json",
+    "json-viewer",
+    "json-schema",
+    "tauri",
+    "structured-data",
+    "data-visualization",
+    "codegen"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
