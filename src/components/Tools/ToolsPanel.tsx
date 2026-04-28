@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { tauriApi } from '../../utils/tauri';
 import { CodeEditor } from '../Editor/CodeEditor';
-import { Play, Globe, Link, Search, Terminal, Fingerprint, Scissors } from 'lucide-react';
+import { beautifyJsonContent, formatJsonContent, minifyJsonContent, validateJsonContent } from '../../utils/jsonFormat';
+import { Play, Globe, Link, Search, Terminal, Fingerprint, Scissors, CheckCircle2, Braces, Minimize2 } from 'lucide-react';
 
 export const ToolsPanel = ({ content, setContent, setFormat }: { content: string, setContent: (c: string) => void, setFormat: (f: string) => void }) => {
-    const [tool, setTool] = useState<'jq' | 'jsonpath' | 'jwt' | 'anonymize' | 'url'>('jq');
+    const [tool, setTool] = useState<'format' | 'jq' | 'jsonpath' | 'jwt' | 'anonymize' | 'url'>('format');
     const [input, setInput] = useState('');
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -72,10 +73,37 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
         }
     };
 
+    const validateJson = () => {
+        setResult(validateJsonContent(content).message);
+    };
+
+    const applyJsonTransform = (action: 'format' | 'beautify' | 'minify') => {
+        try {
+            const nextContent = action === 'minify'
+                ? minifyJsonContent(content)
+                : action === 'beautify'
+                    ? beautifyJsonContent(content)
+                    : formatJsonContent(content);
+
+            setContent(nextContent);
+            setFormat('json');
+            setResult(action === 'minify' ? 'JSON minified.' : 'JSON formatted.');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            setResult(`${action === 'minify' ? 'Minify' : 'Format'} error: ${message}`);
+        }
+    };
+
     return (
         <div className="flex bg-background h-full w-full overflow-hidden">
             <div className="w-1/4 border-r border-border bg-surface p-4 flex flex-col gap-2">
                 <h3 className="text-xs font-bold text-muted uppercase mb-4 px-2">Tools</h3>
+                <button
+                    onClick={() => setTool('format')}
+                    className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'format' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
+                >
+                    <Braces size={14} /> Format & Validate
+                </button>
                 <button
                     onClick={() => setTool('jq')}
                     className={`p-2 rounded text-left flex items-center gap-2 ${tool === 'jq' ? 'bg-primary text-background font-bold' : 'text-text hover:bg-muted/10'}`}
@@ -111,9 +139,9 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
             <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
                 <div className="flex justify-between items-center">
                     <h3 className="text-sm font-bold text-muted uppercase tracking-wider">
-                        {tool === 'url' ? 'Remote Import' : tool.toUpperCase()}
+                        {tool === 'url' ? 'Remote Import' : tool === 'format' ? 'Format & Validate' : tool.toUpperCase()}
                     </h3>
-                    {tool !== 'url' && tool !== 'jwt' && (
+                    {tool !== 'url' && tool !== 'jwt' && tool !== 'format' && (
                         <button
                             onClick={tool === 'jq' ? runJq : tool === 'jsonpath' ? runJsonPath : anonymize}
                             className="bg-primary text-background px-4 py-1.5 rounded-lg font-bold flex items-center gap-2"
@@ -132,7 +160,50 @@ export const ToolsPanel = ({ content, setContent, setFormat }: { content: string
                 </div>
 
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                    {tool === 'url' ? (
+                    {tool === 'format' ? (
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={validateJson}
+                                className="rounded border border-border bg-surface p-4 text-left text-text hover:bg-muted/10 flex items-start gap-3"
+                            >
+                                <CheckCircle2 size={18} className="text-primary mt-0.5" />
+                                <span>
+                                    <span className="block text-sm font-bold">Validate JSON</span>
+                                    <span className="block text-xs text-muted">Check whether the active document can be parsed.</span>
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => applyJsonTransform('format')}
+                                className="rounded border border-border bg-surface p-4 text-left text-text hover:bg-muted/10 flex items-start gap-3"
+                            >
+                                <Braces size={18} className="text-primary mt-0.5" />
+                                <span>
+                                    <span className="block text-sm font-bold">Format JSON</span>
+                                    <span className="block text-xs text-muted">Normalize indentation with stable two-space JSON.</span>
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => applyJsonTransform('beautify')}
+                                className="rounded border border-border bg-surface p-4 text-left text-text hover:bg-muted/10 flex items-start gap-3"
+                            >
+                                <Braces size={18} className="text-primary mt-0.5" />
+                                <span>
+                                    <span className="block text-sm font-bold">Beautify JSON</span>
+                                    <span className="block text-xs text-muted">Make compact payloads easier to scan and edit.</span>
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => applyJsonTransform('minify')}
+                                className="rounded border border-border bg-surface p-4 text-left text-text hover:bg-muted/10 flex items-start gap-3"
+                            >
+                                <Minimize2 size={18} className="text-primary mt-0.5" />
+                                <span>
+                                    <span className="block text-sm font-bold">Minify JSON</span>
+                                    <span className="block text-xs text-muted">Compact JSON before copying or exporting.</span>
+                                </span>
+                            </button>
+                        </div>
+                    ) : tool === 'url' ? (
                         <div className="space-y-4">
                             <div className="p-4 bg-muted/5 rounded-xl border border-border">
                                 <h4 className="text-xs font-bold text-muted uppercase mb-3 flex items-center gap-2 text-primary">

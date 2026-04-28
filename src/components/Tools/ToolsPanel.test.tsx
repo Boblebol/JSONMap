@@ -27,8 +27,36 @@ vi.mock('../Editor/CodeEditor', () => ({
 describe('ToolsPanel', () => {
     it('renders commands buttons', () => {
         render(<ToolsPanel content="{}" setContent={() => { }} setFormat={() => { }} />);
+        expect(screen.getAllByText('Format & Validate')).not.toHaveLength(0);
         expect(screen.getByText('JQ Query')).toBeInTheDocument();
         expect(screen.getByText('JWT Decoder')).toBeInTheDocument();
+    });
+
+    it('validates active JSON and reports invalid content', () => {
+        const { rerender } = render(<ToolsPanel content='{"foo":1}' setContent={() => { }} setFormat={() => { }} />);
+
+        fireEvent.click(screen.getByText('Validate JSON'));
+
+        expect(screen.getByDisplayValue('Valid JSON.')).toBeInTheDocument();
+
+        rerender(<ToolsPanel content='{"foo":' setContent={() => { }} setFormat={() => { }} />);
+        fireEvent.click(screen.getByText('Validate JSON'));
+
+        expect(screen.getByDisplayValue(/Invalid JSON:/)).toBeInTheDocument();
+    });
+
+    it('formats, beautifies, and minifies the active JSON document', () => {
+        const setContent = vi.fn();
+
+        render(<ToolsPanel content='{"foo":1,"bar":[true]}' setContent={setContent} setFormat={() => { }} />);
+
+        fireEvent.click(screen.getByText('Format JSON'));
+        fireEvent.click(screen.getByText('Beautify JSON'));
+        fireEvent.click(screen.getByText('Minify JSON'));
+
+        expect(setContent).toHaveBeenNthCalledWith(1, '{\n  "foo": 1,\n  "bar": [\n    true\n  ]\n}');
+        expect(setContent).toHaveBeenNthCalledWith(2, '{\n  "foo": 1,\n  "bar": [\n    true\n  ]\n}');
+        expect(setContent).toHaveBeenNthCalledWith(3, '{"foo":1,"bar":[true]}');
     });
 
     it('runs jq with the filter and parsed active JSON', async () => {
@@ -36,6 +64,7 @@ describe('ToolsPanel', () => {
 
         render(<ToolsPanel content='{"foo":1}' setContent={() => { }} setFormat={() => { }} />);
 
+        fireEvent.click(screen.getByText('JQ Query'));
         fireEvent.change(screen.getByLabelText('code-editor-jq'), { target: { value: '.foo' } });
         fireEvent.click(screen.getByText('Run'));
 

@@ -275,7 +275,7 @@ Tickets use the following format:
 | ID | Type | Priority | Title | Acceptance Criteria |
 | --- | --- | --- | --- | --- |
 | JM-034 | design | P0 | Add developer tools drawer | Advanced tools are hidden by default behind one sidebar action but easy to access. |
-| JM-035 | feature | P0 | Add format, validate, beautify, minify | Actions operate on the active document and report errors clearly. |
+| JM-035 | feature | P0 | Add format, validate, beautify, minify | JSON actions operate on the active document and report errors clearly. |
 | JM-036 | feature | P0 | Add JQ tool for active document | Query results can be viewed, copied, or applied as a new document. |
 | JM-037 | feature | P0 | Add JSONPath tool for active document | Query results can be viewed, copied, or applied as a new document. |
 | JM-038 | feature | P1 | Add JWT decoder | Users can decode a token from selected text or pasted input. |

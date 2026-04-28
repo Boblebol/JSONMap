@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual snapshot naming with named snapshot export filenames.
 - Inspector actions to copy the selected JSONPath, copy the selected subtree, and export it as JSON.
 - Developer tools drawer that hides advanced tools behind one sidebar action.
+- Developer tools actions for JSON validation, formatting, beautifying, and minifying.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed
