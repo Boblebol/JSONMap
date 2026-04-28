@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Converter action that uses the active document and creates converted output as a selected in-memory document.
 - TypeScript generation action that creates generated types as a selected `.ts` workspace document.
 - Python dataclass generation action that creates generated models as a selected `.py` workspace document.
+- Pydantic v2 generation action that creates generated models as a selected `.pydantic.py` workspace document.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
 
 ### Changed

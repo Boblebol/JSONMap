@@ -19,24 +19,36 @@ const LANGUAGES = [
     { id: 'rust', label: 'Rust' },
     { id: 'go', label: 'Go' },
     { id: 'python', label: 'Python' },
+    { id: 'pydantic', label: 'Pydantic v2' },
     { id: 'csharp', label: 'C#' },
     { id: 'java', label: 'Java' },
     { id: 'swift', label: 'Swift' },
 ];
 
-const stripKnownExtension = (name: string) => name.replace(/\.(json|yaml|yml|xml|toml|csv|ts|py)$/i, '');
+const stripKnownExtension = (name: string) => name.replace(/(\.pydantic)?\.(json|yaml|yml|xml|toml|csv|ts|py)$/i, '');
 
 const getGeneratedDocumentName = (sourceName: string | undefined, lang: string) => {
     const baseName = sourceName ? stripKnownExtension(sourceName) : 'Generated types';
-    const extension = lang === 'typescript' ? 'ts' : lang === 'python' ? 'py' : 'txt';
+    const extension = lang === 'typescript' ? 'ts' : lang === 'python' ? 'py' : lang === 'pydantic' ? 'pydantic.py' : 'txt';
     return `${baseName}.${extension}`;
 };
 
 const getGeneratedDocumentFormat = (lang: string): FileFormat | null => {
     if (lang === 'typescript') return 'typescript';
-    if (lang === 'python') return 'python';
+    if (lang === 'python' || lang === 'pydantic') return 'python';
     return null;
 };
+
+const getQuicktypeLanguage = (lang: string) => lang === 'pydantic' ? 'python' : lang;
+
+const getRendererOptions = (lang: string) => ({
+    "just-types": "true",
+    "package": "json_map",
+    ...(lang === 'python' || lang === 'pydantic' ? { "python-version": "3.7" } : {}),
+    ...(lang === 'pydantic' ? { "pydantic-base-model": "true" } : {}),
+});
+
+const getEditorLanguage = (lang: string) => lang === 'pydantic' ? 'python' : lang === 'typescript' ? 'typescript' : lang;
 
 export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenPanelProps) => {
     const [lang, setLang] = useState('typescript');
@@ -49,7 +61,8 @@ export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenP
         const generate = async () => {
             setLoading(true);
             try {
-                const jsonInput = jsonInputForTargetLanguage(lang as any);
+                const quicktypeLanguage = getQuicktypeLanguage(lang);
+                const jsonInput = jsonInputForTargetLanguage(quicktypeLanguage as any);
                 await jsonInput.addSource({
                     name: "Root",
                     samples: [content],
@@ -60,11 +73,8 @@ export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenP
 
                 const { lines } = await quicktype({
                     inputData,
-                    lang: lang as any,
-                    rendererOptions: {
-                        "just-types": "true", // for TS
-                        "package": "json_map", // for Go/Java
-                    }
+                    lang: quicktypeLanguage as any,
+                    rendererOptions: getRendererOptions(lang),
                 });
 
                 setOutput(lines.join('\n'));
@@ -139,7 +149,7 @@ export const CodeGenPanel = ({ content, sourceName, onCreateDocument }: CodeGenP
                 )}
                 <CodeEditor
                     value={output}
-                    language={lang === 'typescript' ? 'typescript' : lang}
+                    language={getEditorLanguage(lang)}
                     onChange={() => { }} // Read-only
                 />
             </div>

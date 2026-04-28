@@ -1,13 +1,21 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { quicktype } from 'quicktype-core';
 import { CodeGenPanel } from './CodeGenPanel';
 
 // Mock quicktype-core
 vi.mock('quicktype-core', () => ({
-    quicktype: vi.fn(({ lang }: { lang: string }) => Promise.resolve(lang === 'python'
-        ? { lines: ['from dataclasses import dataclass', '', '@dataclass', 'class Root:', '    name: str'] }
-        : { lines: ['interface Root {', '  name: string;', '}'] }
-    )),
+    quicktype: vi.fn(({ lang, rendererOptions }: { lang: string; rendererOptions: Record<string, string> }) => {
+        if (rendererOptions['pydantic-base-model'] === 'true') {
+            return Promise.resolve({ lines: ['from pydantic import BaseModel', '', 'class Root(BaseModel):', '    name: str'] });
+        }
+
+        if (lang === 'python') {
+            return Promise.resolve({ lines: ['from dataclasses import dataclass', '', '@dataclass', 'class Root:', '    name: str'] });
+        }
+
+        return Promise.resolve({ lines: ['interface Root {', '  name: string;', '}'] });
+    }),
     InputData: class {
         addInput = vi.fn();
     },
@@ -95,11 +103,53 @@ describe('CodeGenPanel', () => {
             expect(screen.getByTestId('code-editor')).toHaveTextContent('@dataclass');
         });
 
+        expect(quicktype).toHaveBeenLastCalledWith(expect.objectContaining({
+            lang: 'python',
+            rendererOptions: expect.objectContaining({
+                'just-types': 'true',
+                'python-version': '3.7',
+            }),
+        }));
+
         fireEvent.click(screen.getByText('Create document'));
 
         expect(onCreateDocument).toHaveBeenCalledWith('from dataclasses import dataclass\n\n@dataclass\nclass Root:\n    name: str', {
             format: 'python',
             name: 'payload.py',
+        });
+    });
+
+    it('creates a Pydantic v2 workspace document from generated code', async () => {
+        const onCreateDocument = vi.fn();
+
+        render(
+            <CodeGenPanel
+                content='{"name":"test"}'
+                sourceName="payload.json"
+                onCreateDocument={onCreateDocument}
+            />
+        );
+
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'pydantic' } });
+
+        await waitFor(() => {
+            expect(screen.getByTestId('code-editor')).toHaveTextContent('class Root(BaseModel):');
+        });
+
+        expect(quicktype).toHaveBeenLastCalledWith(expect.objectContaining({
+            lang: 'python',
+            rendererOptions: expect.objectContaining({
+                'just-types': 'true',
+                'pydantic-base-model': 'true',
+                'python-version': '3.7',
+            }),
+        }));
+
+        fireEvent.click(screen.getByText('Create document'));
+
+        expect(onCreateDocument).toHaveBeenCalledWith('from pydantic import BaseModel\n\nclass Root(BaseModel):\n    name: str', {
+            format: 'python',
+            name: 'payload.pydantic.py',
         });
     });
 });

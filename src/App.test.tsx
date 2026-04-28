@@ -70,6 +70,9 @@ vi.mock('./components/Tools/CodeGenPanel', () => ({
             <button onClick={() => onCreateDocument?.('from dataclasses import dataclass', { name: 'Sample JSON.py', format: 'python' })}>
                 Create Python document
             </button>
+            <button onClick={() => onCreateDocument?.('from pydantic import BaseModel', { name: 'Sample JSON.pydantic.py', format: 'python' })}>
+                Create Pydantic document
+            </button>
         </div>
     ),
 }));
@@ -339,6 +342,17 @@ describe('App workspace', () => {
 
         expect(await screen.findByText('Sample JSON.py')).toBeInTheDocument();
         expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('from dataclasses import dataclass');
+    });
+
+    it('adds generated Pydantic models as a selected in-memory document', async () => {
+        render(<App />);
+
+        fireEvent.click(screen.getByTitle('Developer Tools'));
+        fireEvent.click(screen.getByText('Code Generation'));
+        fireEvent.click(screen.getByText('Create Pydantic document'));
+
+        expect(await screen.findByText('Sample JSON.pydantic.py')).toBeInTheDocument();
+        expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('from pydantic import BaseModel');
     });
 
     it('creates, restores, and exports document snapshots from the version panel', async () => {
