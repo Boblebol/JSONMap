@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In-memory document workspace for imported JSON files.
 - Drag and drop import for local files in the web shell.
 - Active document reset and export controls.
+- Node inspector for graph selection, path/type/value review, and JSON scalar editing.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
+
+### Changed
+- Graph nodes are now read-only; value edits go through the inspector for a more predictable workflow.
 
 ### Fixed
 - JQ and JSONPath tools now pass the query and parsed JSON arguments in the correct order.

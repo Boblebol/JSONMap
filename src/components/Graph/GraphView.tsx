@@ -19,21 +19,20 @@ interface GraphViewProps {
     initialNodes: Node[];
     initialEdges: Edge[];
     isTruncated?: boolean;
-    onNodeUpdate?: (path: (string | number)[], newValue: any) => void;
+    onNodeSelect?: (node: Node) => void;
 }
 
-export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeUpdate }: GraphViewProps) => {
+export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelect }: GraphViewProps) => {
     const nodeTypes = useMemo(() => ({ editable: EditableNode }), []);
 
     const preparedNodes = useMemo(() =>
         initialNodes.map(node => ({
             ...node,
             data: {
-                ...node.data,
-                onChange: onNodeUpdate
+                ...node.data
             }
         }))
-        , [initialNodes, onNodeUpdate]);
+        , [initialNodes]);
 
     const [nodes, setNodes, onNodesChange] = useNodesState(preparedNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -127,6 +126,7 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeUpdat
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                onNodeClick={(_, node) => onNodeSelect?.(node)}
                 onNodeDoubleClick={onNodeDoubleClick}
                 nodeTypes={nodeTypes}
                 fitView

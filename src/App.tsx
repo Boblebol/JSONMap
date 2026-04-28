@@ -4,9 +4,10 @@ import download from 'downloadjs';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { CodeEditor } from './components/Editor/CodeEditor';
 import { GraphView } from './components/Graph/GraphView';
+import { NodeInspector } from './components/Inspector/NodeInspector';
 import { jsonToGraph } from './utils/graphTransform';
 import { FileFormat, tauriApi } from './utils/tauri';
-import { Node, Edge } from 'reactflow';
+import type { Node, Edge } from 'reactflow';
 import { CodeGenPanel } from './components/Tools/CodeGenPanel';
 import { ToolsPanel } from './components/Tools/ToolsPanel';
 import { ConverterPanel } from './components/Converter/ConverterPanel';
@@ -86,6 +87,7 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [isGraphStale, setIsGraphStale] = useState(true);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   const activeDocument = useMemo(() => getActiveDocument(workspace), [workspace]);
   const content = activeDocument?.currentContent ?? '';
@@ -163,6 +165,10 @@ function App() {
   useEffect(() => {
     setIsGraphStale(true);
   }, [content, format]);
+
+  useEffect(() => {
+    setSelectedNode(null);
+  }, [activeDocument?.id, format]);
 
   useEffect(() => {
     const updateGraph = async () => {
@@ -252,6 +258,16 @@ function App() {
       const data = JSON.parse(contentRef.current);
       const updatedData = updateValueByPath(data, path, newValue);
       setWorkspace(currentWorkspace => updateActiveDocumentContent(currentWorkspace, JSON.stringify(updatedData, null, 2)));
+      setSelectedNode(currentNode => {
+        if (!currentNode) return currentNode;
+        return {
+          ...currentNode,
+          data: {
+            ...currentNode.data,
+            value: newValue,
+          },
+        };
+      });
     } catch (e: any) {
       console.error("Node update error:", e);
       setError("Failed to update JSON from graph: " + e.message);
@@ -500,12 +516,19 @@ function App() {
             </div>
 
             {/* Graph Panel */}
-            <div className="flex-1 relative bg-surface">
-              <GraphView
-                initialNodes={graphData.nodes}
-                initialEdges={graphData.edges}
-                isTruncated={graphData.truncated}
-                onNodeUpdate={handleNodeUpdate}
+            <div className="flex-1 min-w-0 flex bg-surface">
+              <div className="flex-1 min-w-0 relative">
+                <GraphView
+                  initialNodes={graphData.nodes}
+                  initialEdges={graphData.edges}
+                  isTruncated={graphData.truncated}
+                  onNodeSelect={setSelectedNode}
+                />
+              </div>
+              <NodeInspector
+                selectedNode={selectedNode}
+                format={format}
+                onValueUpdate={handleNodeUpdate}
               />
             </div>
           </>

@@ -18,7 +18,22 @@ vi.mock('./components/Editor/CodeEditor', () => ({
 }));
 
 vi.mock('./components/Graph/GraphView', () => ({
-    GraphView: () => <div data-testid="graph-view" />,
+    GraphView: ({ onNodeSelect }: { onNodeSelect?: (node: any) => void }) => (
+        <button
+            data-testid="graph-view"
+            onClick={() => onNodeSelect?.({
+                id: 'n_1',
+                data: {
+                    label: 'name: before',
+                    path: ['name'],
+                    type: 'string',
+                    value: 'before',
+                },
+            })}
+        >
+            Graph
+        </button>
+    ),
 }));
 
 vi.mock('./components/About/AboutModal', () => ({
@@ -124,5 +139,28 @@ describe('App workspace', () => {
         fireEvent.click(screen.getByTitle('Export active document'));
 
         expect(download).toHaveBeenCalledWith('{"name":"after"}', 'payload.json', 'application/json');
+    });
+
+    it('edits selected graph scalar values from the inspector', async () => {
+        const { container } = render(<App />);
+        const file = new File(['{"name":"before"}'], 'payload.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{"name":"before"}');
+        });
+
+        fireEvent.click(screen.getByTestId('graph-view'));
+        fireEvent.change(screen.getByLabelText('Node value'), { target: { value: 'after' } });
+        fireEvent.click(screen.getByText('Apply'));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('active-document-editor')).toHaveDisplayValue('{\n  "name": "after"\n}');
+        });
     });
 });

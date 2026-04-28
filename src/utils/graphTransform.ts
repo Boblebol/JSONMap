@@ -74,7 +74,7 @@ export const jsonToGraph = (data: any) => {
                 value: obj
             },
             position: { x: 0, y: 0 },
-            type: ['string', 'number', 'boolean'].includes(type) ? 'editable' : 'default',
+            type: 'editable',
         });
 
         if (parentId) {
