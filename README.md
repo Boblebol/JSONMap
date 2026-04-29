@@ -79,10 +79,11 @@ Next focus: v2.0 public-release readiness, including architecture docs, reproduc
 3. Open the `.dmg` and drag **JSONMap** to your **Applications** folder.
 
 > [!IMPORTANT]
-> **MacOS Security Note**: Since the app is currently unsigned, you might see a warning that the "app is damaged" or cannot be opened. To fix this, run the following command in your terminal:
+> **macOS Security Note**: JSONMap is intentionally distributed without Apple signing/notarization for now. If macOS says the app is "damaged" or cannot be opened, drag **JSONMap** to **Applications**, then run:
 > ```bash
-> xattr -cr /Applications/JSONMap.app
+> xattr -dr com.apple.quarantine /Applications/JSONMap.app
 > ```
+> If macOS reports a permission error, rerun the same command with `sudo`.
 
 ## 🏗️ Development
 
