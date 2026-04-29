@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest]
+        platform: [macos-13, macos-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -85,6 +85,7 @@ jobs:
           name: ${{ github.ref_name }}
           draft: false
           prerelease: false
+          overwrite_files: true
           files: |
             release-artifacts/*.dmg
             src-tauri/target/release/bundle/macos/*.app.tar.gz
