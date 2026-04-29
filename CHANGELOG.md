@@ -37,10 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Progressive graph previews for large JSON documents.
 - Lazy graph branch loading for deferred object and array nodes.
 - Large-file mode with structure-first graph limits and omitted oversized scalar payloads.
+- Generated 1 MiB, 5 MiB, and 20 MiB graph benchmark fixtures with a `pnpm benchmark:graph` command.
 
 ### Changed
 - Graph nodes are now read-only; value edits go through the inspector for a more predictable workflow.
 - Long scalar graph labels are shortened to keep large documents navigable.
+- README and performance docs now describe large-file limits, expected behavior, and benchmark usage.
 
 ### Fixed
 - JQ and JSONPath tools now pass the query and parsed JSON arguments in the correct order.

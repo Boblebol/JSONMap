@@ -29,6 +29,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "benchmark:graph": "RUN_GRAPH_BENCHMARKS=1 vitest --run src/utils/graphProcessing.benchmark.test.ts --reporter=verbose",
     "test:coverage:backend": "cd src-tauri && cargo tarpaulin",
     "tauri": "tauri"
   },

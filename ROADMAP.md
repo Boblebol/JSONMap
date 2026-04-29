@@ -184,8 +184,8 @@ Scope:
 
 Progress:
 
-- Done: JM-050 through JM-053.
-- Remaining: benchmark fixtures and documented performance limits.
+- Done: JM-050 through JM-055.
+- Remaining: release validation and future performance tuning.
 
 Exit criteria:
 
@@ -309,8 +309,8 @@ Tickets use the following format:
 | JM-051 | performance | P0 | done | Add progressive graph rendering | Large inputs emit a shallow preview before the deeper graph payload is applied. |
 | JM-052 | performance | P0 | done | Add lazy branch loading | Deferred graph nodes can load their branch on demand from the selected graph path. |
 | JM-053 | performance | P1 | done | Add large-file mode | App switches to structure-first graph limits, truncates scalar labels, and omits large scalar values from graph payloads. |
-| JM-054 | performance | P1 | planned | Add benchmark fixtures | Benchmarks cover 1 MB, 5 MB, and 20 MB JSON files. |
-| JM-055 | docs | P2 | planned | Document performance limits | README explains tested file sizes and expected behavior. |
+| JM-054 | performance | P1 | done | Add benchmark fixtures | Generated fixtures and `pnpm benchmark:graph` cover 1 MiB, 5 MiB, and 20 MiB JSON files. |
+| JM-055 | docs | P2 | done | Document performance limits | README and `docs/performance.md` explain tested file sizes and expected behavior. |
 
 ### v2.0.0 Tickets
 

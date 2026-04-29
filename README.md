@@ -105,6 +105,9 @@ pnpm run dev
 # Run frontend tests
 pnpm test --run
 
+# Run graph large-file benchmarks
+pnpm benchmark:graph
+
 # Run backend tests
 cd src-tauri
 cargo test --locked
@@ -119,11 +122,14 @@ Before opening a pull request or cutting a release candidate, run:
 
 ```bash
 pnpm test --run
+pnpm benchmark:graph
 pnpm run build
 cd src-tauri && cargo test --locked
 ```
 
 The current frontend build emits a Vite chunk-size warning because Quicktype is bundled for in-app code generation. That warning is tracked as future performance work; it is not currently a build failure.
+
+Large-file graph behavior and benchmark notes are documented in [docs/performance.md](docs/performance.md).
 
 ## 🤝 Contributing
 
