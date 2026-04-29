@@ -1,6 +1,6 @@
 [package]
 name = "json-map"
-version = "1.0.1"
+version = "1.8.0"
 description = "A native macOS JSON visualizer"
 authors = ["Alexandre Enouf (Boblebol) <alexandre.enouf@gmail.com>"]
 edition = "2021"

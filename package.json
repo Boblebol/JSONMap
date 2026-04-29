@@ -2,7 +2,7 @@
   "name": "jsonmap",
   "private": true,
   "description": "Local-first desktop workspace for visualizing, editing, versioning, converting, and generating code from structured data.",
-  "version": "1.1.2",
+  "version": "1.8.0",
   "author": "Alexandre Enouf (Boblebol)",
   "license": "MIT",
   "repository": {

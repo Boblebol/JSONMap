@@ -51,7 +51,7 @@
 
 ## Current Roadmap Status
 
-The v1.7 code generation milestone is implemented:
+The v1.8 large-file milestone is implemented:
 
 - TypeScript interfaces as `.ts` documents.
 - Python dataclasses as `.py` documents.
@@ -60,8 +60,11 @@ The v1.7 code generation milestone is implemented:
 - Rust serde structs as `.rs` documents.
 - JSON Schema inference and validation as `.schema.json` documents.
 - Stable fixture snapshots for generated TypeScript, Python, Pydantic, Go, and Rust output.
+- Worker-backed graph processing with progressive previews.
+- Lazy branch loading and structure-first graph limits for large JSON documents.
+- Generated 1 MiB, 5 MiB, and 20 MiB graph benchmark fixtures.
 
-Next focus: finish v1.8 performance validation with benchmark fixtures and documented tested file-size limits.
+Next focus: v2.0 public-release readiness, including architecture docs, reproducible release hardening, and signing/notarization planning.
 
 ## 📸 Screenshots
 

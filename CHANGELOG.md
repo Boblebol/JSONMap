@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+## [1.8.0] - 2026-04-29
+
 ### Added
 - In-memory document workspace for imported JSON files.
 - Drag and drop import for local files in the web shell.
