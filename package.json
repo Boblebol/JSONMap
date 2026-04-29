@@ -72,5 +72,10 @@
     "vite": "^7.0.4",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "vite-plugin-monaco-editor@1.1.0": "patches/vite-plugin-monaco-editor@1.1.0.patch"
+    }
   }
 }
