@@ -22,10 +22,23 @@ interface GraphViewProps {
     initialNodes: Node[];
     initialEdges: Edge[];
     isTruncated?: boolean;
+    isProcessing?: boolean;
+    isLargeFileMode?: boolean;
+    deferredCount?: number;
     onNodeSelect?: (node: Node) => void;
+    onExpandNode?: (node: Node) => void;
 }
 
-export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelect }: GraphViewProps) => {
+export const GraphView = ({
+    initialNodes,
+    initialEdges,
+    isTruncated,
+    isProcessing,
+    isLargeFileMode,
+    deferredCount = 0,
+    onNodeSelect,
+    onExpandNode,
+}: GraphViewProps) => {
     const nodeTypes = useMemo(() => ({ editable: EditableNode }), []);
 
     const preparedNodes = useMemo(() =>
@@ -53,6 +66,7 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
         if (!selectedNodeId) return false;
         return getDescendantNodeIds(edges, selectedNodeId).length > 0;
     }, [edges, selectedNodeId]);
+    const selectedNodeHasDeferredChildren = Boolean(selectedNode?.data?.hasDeferredChildren);
 
     useEffect(() => {
         setNodes(preparedNodes);
@@ -161,14 +175,25 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
         setEdges(updatedGraph.edges);
     }, [edges, nodes, selectedNodeId, setEdges, setNodes]);
 
+    const loadSelectedBranch = useCallback(() => {
+        if (!selectedNode || !selectedNodeHasDeferredChildren) return;
+        onExpandNode?.(selectedNode);
+    }, [onExpandNode, selectedNode, selectedNodeHasDeferredChildren]);
+
     const onNodeDoubleClick = useCallback((_: any, node: Node) => {
+        if (node.data?.hasDeferredChildren) {
+            selectNode(node);
+            onExpandNode?.(node);
+            return;
+        }
+
         const descendants = getDescendantNodeIds(edges, node.id);
         const isCurrentlyExpanded = descendants.some(id => !nodes.find(n => n.id === id)?.hidden);
         const updatedGraph = setGraphBranchVisibility(nodes, edges, node.id, isCurrentlyExpanded);
 
         setNodes(updatedGraph.nodes);
         setEdges(updatedGraph.edges);
-    }, [nodes, edges, setNodes, setEdges]);
+    }, [edges, nodes, onExpandNode, selectNode, setEdges, setNodes]);
 
     return (
         <div className="h-full w-full bg-[#1a1b26]" ref={ref}>
@@ -251,6 +276,16 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
                         >
                             Expand
                         </button>
+                        <button
+                            type="button"
+                            onClick={loadSelectedBranch}
+                            disabled={!selectedNodeHasDeferredChildren}
+                            aria-label="Load selected branch"
+                            className="px-2 py-1.5 rounded border border-primary/40 text-xs text-primary hover:bg-primary/10 disabled:opacity-40 disabled:hover:bg-transparent"
+                        >
+                            <ChevronRight size={13} className="inline mr-1" />
+                            Load branch
+                        </button>
                     </div>
                 </Panel>
 
@@ -289,8 +324,14 @@ export const GraphView = ({ initialNodes, initialEdges, isTruncated, onNodeSelec
                         </div>
                     )}
 
-                    <div className="bg-background/50 backdrop-blur border border-border rounded-lg px-3 py-1.5 text-xs text-muted flex items-center gap-2 shadow-sm">
-                        <Info size={14} /> Nodes: {nodes.length} | Edges: {edges.length} {isTruncated && <span className="text-amber-500 font-bold ml-2">(Truncated View)</span>}
+                    <div className="bg-background/50 backdrop-blur border border-border rounded-lg px-3 py-1.5 text-xs text-muted flex flex-wrap items-center justify-end gap-2 shadow-sm max-w-sm">
+                        <Info size={14} />
+                        {isProcessing && <span className="text-primary font-semibold">Processing</span>}
+                        {isLargeFileMode && <span className="text-amber-500 font-semibold">Large-file mode</span>}
+                        <span>Nodes: {nodes.length}</span>
+                        <span>Edges: {edges.length}</span>
+                        {deferredCount > 0 && <span className="text-primary font-semibold">Deferred: {deferredCount}</span>}
+                        {isTruncated && <span className="text-amber-500 font-bold">Truncated view</span>}
                     </div>
                 </Panel>
             </ReactFlow>

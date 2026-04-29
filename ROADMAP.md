@@ -182,6 +182,11 @@ Scope:
 - Add large-file mode.
 - Add performance benchmarks.
 
+Progress:
+
+- Done: JM-050 through JM-053.
+- Remaining: benchmark fixtures and documented performance limits.
+
 Exit criteria:
 
 - Files above typical browser viewer comfort limits remain inspectable.
@@ -298,14 +303,14 @@ Tickets use the following format:
 
 ### v1.8.0 Tickets
 
-| ID | Type | Priority | Title | Acceptance Criteria |
-| --- | --- | --- | --- | --- |
-| JM-050 | performance | P0 | Move parsing off the React render path | Large files do not block typing or UI interactions during parsing. |
-| JM-051 | performance | P0 | Add progressive graph rendering | The graph renders useful top-level structure before the full graph is ready. |
-| JM-052 | performance | P0 | Add lazy branch loading | Large arrays and objects can expand on demand. |
-| JM-053 | performance | P1 | Add large-file mode | App switches to structure-first mode for large inputs. |
-| JM-054 | performance | P1 | Add benchmark fixtures | Benchmarks cover 1 MB, 5 MB, and 20 MB JSON files. |
-| JM-055 | docs | P2 | Document performance limits | README explains tested file sizes and expected behavior. |
+| ID | Type | Priority | Status | Title | Acceptance Criteria |
+| --- | --- | --- | --- | --- | --- |
+| JM-050 | performance | P0 | done | Move parsing off the React render path | Graph parsing and transformation run through a worker pipeline with an async fallback outside render. |
+| JM-051 | performance | P0 | done | Add progressive graph rendering | Large inputs emit a shallow preview before the deeper graph payload is applied. |
+| JM-052 | performance | P0 | done | Add lazy branch loading | Deferred graph nodes can load their branch on demand from the selected graph path. |
+| JM-053 | performance | P1 | done | Add large-file mode | App switches to structure-first graph limits, truncates scalar labels, and omits large scalar values from graph payloads. |
+| JM-054 | performance | P1 | planned | Add benchmark fixtures | Benchmarks cover 1 MB, 5 MB, and 20 MB JSON files. |
+| JM-055 | docs | P2 | planned | Document performance limits | README explains tested file sizes and expected behavior. |
 
 ### v2.0.0 Tickets
 

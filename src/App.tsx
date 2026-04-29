@@ -6,9 +6,15 @@ import { CodeEditor } from './components/Editor/CodeEditor';
 import { GraphView } from './components/Graph/GraphView';
 import { NodeInspector } from './components/Inspector/NodeInspector';
 import { VersionPanel } from './components/Versions/VersionPanel';
-import { jsonToGraph } from './utils/graphTransform';
+import { getLayoutedElements, type GraphData, type JsonPath } from './utils/graphTransform';
+import {
+  LARGE_FILE_THRESHOLD,
+  processGraphRequest,
+  type GraphProcessingMessage,
+  type GraphProcessingRequest,
+} from './utils/graphProcessing';
 import { FileFormat, tauriApi } from './utils/tauri';
-import type { Node, Edge } from 'reactflow';
+import type { Node } from 'reactflow';
 import { CodeGenPanel } from './components/Tools/CodeGenPanel';
 import { ToolsPanel } from './components/Tools/ToolsPanel';
 import { ConverterPanel } from './components/Converter/ConverterPanel';
@@ -88,6 +94,60 @@ const getEditorLanguage = (format: FileFormat) => {
   return 'yaml';
 };
 
+type AppGraphData = GraphData & {
+  largeFileMode?: boolean;
+  progressive?: boolean;
+};
+
+type GraphStatus = 'idle' | 'processing' | 'ready';
+
+const createEmptyGraphData = (): AppGraphData => ({
+  nodes: [],
+  edges: [],
+  truncated: false,
+  deferredCount: 0,
+  largeFileMode: false,
+  progressive: false,
+});
+
+const mergeExpansionGraph = (
+  currentGraph: AppGraphData,
+  expansionGraph: GraphData,
+  parentId?: string,
+): AppGraphData => {
+  const baseNodes = currentGraph.nodes.map(node => (
+    node.id === parentId
+      ? {
+        ...node,
+        data: {
+          ...node.data,
+          hasDeferredChildren: false,
+        },
+      }
+      : node
+  ));
+  const nodesById = new Map(baseNodes.map(node => [node.id, node]));
+  const edgesById = new Map(currentGraph.edges.map(edge => [edge.id, edge]));
+
+  expansionGraph.nodes.forEach(node => {
+    nodesById.set(node.id, node);
+  });
+  expansionGraph.edges.forEach(edge => {
+    edgesById.set(edge.id, edge);
+  });
+
+  const layout = getLayoutedElements([...nodesById.values()], [...edgesById.values()]);
+  const loadedDeferredBranch = parentId ? 1 : 0;
+
+  return {
+    ...layout,
+    truncated: currentGraph.truncated || expansionGraph.truncated,
+    deferredCount: Math.max(0, currentGraph.deferredCount - loadedDeferredBranch) + expansionGraph.deferredCount,
+    largeFileMode: currentGraph.largeFileMode,
+    progressive: currentGraph.progressive,
+  };
+};
+
 const getPathFileSegment = (path: (string | number)[]) => (
   path.length === 0
     ? 'root'
@@ -122,7 +182,8 @@ const createInitialWorkspace = () => addDocuments(
 function App() {
   const [activeTab, setActiveTab] = useState('visualizer');
   const [workspace, setWorkspace] = useState(createInitialWorkspace);
-  const [graphData, setGraphData] = useState<{ nodes: Node[], edges: Edge[], truncated?: boolean }>({ nodes: [], edges: [] });
+  const [graphData, setGraphData] = useState<AppGraphData>(createEmptyGraphData);
+  const [graphStatus, setGraphStatus] = useState<GraphStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -144,6 +205,8 @@ function App() {
   const contentRef = useRef(content);
   const formatRef = useRef(format);
   const activeDocumentRef = useRef(activeDocument);
+  const graphRequestIdRef = useRef(0);
+  const graphWorkerRef = useRef<Worker | null>(null);
 
   useLayoutEffect(() => {
     contentRef.current = content;
@@ -178,6 +241,95 @@ function App() {
       }
     };
     loadTheme();
+  }, []);
+
+  const handleGraphMessage = useCallback((message: GraphProcessingMessage) => {
+    if (message.requestId !== graphRequestIdRef.current) return;
+
+    if (message.stage === 'error') {
+      setGraphStatus('ready');
+      setError(message.error ?? 'Failed to process graph.');
+      return;
+    }
+
+    if (!message.graph) return;
+
+    if (message.stage === 'preview') {
+      setGraphData({
+        ...message.graph,
+        largeFileMode: Boolean(message.largeFileMode),
+        progressive: true,
+      });
+      setGraphStatus('processing');
+      setError(null);
+      return;
+    }
+
+    if (message.stage === 'expansion') {
+      setGraphData(currentGraph => mergeExpansionGraph(currentGraph, message.graph!, message.parentId));
+      if (message.parentId) {
+        setSelectedNode(currentNode => {
+          if (!currentNode || currentNode.id !== message.parentId) return currentNode;
+          return {
+            ...currentNode,
+            data: {
+              ...currentNode.data,
+              hasDeferredChildren: false,
+            },
+          };
+        });
+      }
+      setGraphStatus('ready');
+      setError(null);
+      return;
+    }
+
+    setGraphData({
+      ...message.graph,
+      largeFileMode: Boolean(message.largeFileMode),
+      progressive: false,
+    });
+    setGraphStatus('ready');
+    setIsGraphStale(false);
+    setError(null);
+  }, []);
+
+  const getGraphWorker = useCallback(() => {
+    if (typeof Worker === 'undefined') return null;
+
+    if (!graphWorkerRef.current) {
+      graphWorkerRef.current = new Worker(new URL('./workers/graphWorker.ts', import.meta.url), { type: 'module' });
+    }
+
+    return graphWorkerRef.current;
+  }, []);
+
+  const dispatchGraphRequest = useCallback((request: GraphProcessingRequest) => {
+    const worker = getGraphWorker();
+
+    if (!worker) {
+      window.setTimeout(() => {
+        processGraphRequest(request).forEach(handleGraphMessage);
+      }, 0);
+      return;
+    }
+
+    worker.onmessage = (event: MessageEvent<GraphProcessingMessage>) => {
+      handleGraphMessage(event.data);
+    };
+    worker.onerror = () => {
+      if (request.requestId !== graphRequestIdRef.current) return;
+      setGraphStatus('ready');
+      setError('Graph worker failed while processing the document.');
+    };
+    worker.postMessage(request);
+  }, [getGraphWorker, handleGraphMessage]);
+
+  useEffect(() => {
+    return () => {
+      graphWorkerRef.current?.terminate();
+      graphWorkerRef.current = null;
+    };
   }, []);
 
   const handleContentChange = useCallback((value: string | undefined) => {
@@ -232,6 +384,7 @@ function App() {
 
   useEffect(() => {
     setIsGraphStale(true);
+    setGraphStatus('idle');
   }, [content, format]);
 
   useEffect(() => {
@@ -243,34 +396,42 @@ function App() {
       if (activeTab !== 'visualizer' || !isGraphStale) return;
 
       try {
-        let parsedData;
-        try {
-          let currentFormat = format;
-          if (content.trim().startsWith('<')) currentFormat = 'xml';
+        const requestId = graphRequestIdRef.current + 1;
+        graphRequestIdRef.current = requestId;
+        setGraphStatus('processing');
 
-          if (window.__TAURI__) {
-            parsedData = await tauriApi.parseContent(content, currentFormat);
-          } else {
-            parsedData = JSON.parse(content);
-          }
-        } catch (e: any) {
-          setError(e.toString());
+        let currentFormat = format;
+        if (content.trim().startsWith('<')) currentFormat = 'xml';
+
+        if (window.__TAURI__ && currentFormat !== 'json') {
+          const parsedData = await tauriApi.parseContent(content, currentFormat);
+          if (requestId !== graphRequestIdRef.current) return;
+          dispatchGraphRequest({
+            type: 'build',
+            requestId,
+            content,
+            format: currentFormat,
+            parsedData,
+          });
           return;
         }
 
-        const result = jsonToGraph(parsedData);
-        setGraphData(result);
-        setIsGraphStale(false);
-        setError(null);
+        dispatchGraphRequest({
+          type: 'build',
+          requestId,
+          content,
+          format: currentFormat,
+        });
       } catch (err: any) {
         console.error("Graph update error:", err);
+        setGraphStatus('ready');
         setError(err.message);
       }
     };
 
     const debounceId = setTimeout(updateGraph, 300);
     return () => clearTimeout(debounceId);
-  }, [content, format, activeTab, isGraphStale]);
+  }, [content, format, activeTab, isGraphStale, dispatchGraphRequest]);
 
   const handleOpenFile = useCallback(async () => {
     try {
@@ -377,6 +538,46 @@ function App() {
       setError("Failed to update JSON from graph: " + e.message);
     }
   }, [format]);
+
+  const handleExpandGraphNode = useCallback(async (node: Node) => {
+    const path = node.data?.path;
+    if (!Array.isArray(path)) return;
+
+    try {
+      const requestId = graphRequestIdRef.current + 1;
+      graphRequestIdRef.current = requestId;
+      setGraphStatus('processing');
+
+      const currentContent = contentRef.current;
+      let currentFormat = formatRef.current;
+      if (currentContent.trim().startsWith('<')) currentFormat = 'xml';
+
+      const requestBase = {
+        type: 'expand' as const,
+        requestId,
+        content: currentContent,
+        format: currentFormat,
+        path: path as JsonPath,
+        parentId: node.id,
+      };
+
+      if (window.__TAURI__ && currentFormat !== 'json') {
+        const parsedData = await tauriApi.parseContent(currentContent, currentFormat);
+        if (requestId !== graphRequestIdRef.current) return;
+        dispatchGraphRequest({
+          ...requestBase,
+          parsedData,
+        });
+        return;
+      }
+
+      dispatchGraphRequest(requestBase);
+    } catch (e: any) {
+      console.error("Branch expansion error:", e);
+      setGraphStatus('ready');
+      setError("Failed to load graph branch: " + e.message);
+    }
+  }, [dispatchGraphRequest]);
 
   const getSelectedJsonSubtree = useCallback((path: (string | number)[]) => {
     if (formatRef.current !== 'json') {
@@ -587,7 +788,7 @@ function App() {
         onSelectTool={handleDeveloperToolSelect}
       />
 
-      {content.length > 1024 * 1024 && (
+      {content.length > LARGE_FILE_THRESHOLD && (
         <div className="fixed bottom-6 left-24 right-6 z-50 animate-in slide-in-from-bottom-4 duration-300">
           <div className="bg-[#eab308]/10 border border-[#eab308]/20 backdrop-blur-xl p-3 rounded-2xl flex items-center justify-between shadow-2xl">
             <div className="flex items-center gap-3">
@@ -595,8 +796,8 @@ function App() {
                 <AlertTriangle size={18} />
               </div>
               <div>
-                <h4 className="font-bold text-[#eab308] text-sm">Large Dataset Detected</h4>
-                <p className="text-[10px] text-text/60">Content size is {(content.length / 1024 / 1024).toFixed(1)}MB. UI performance might be impacted during graph interactions.</p>
+                <h4 className="font-bold text-[#eab308] text-sm">Large-file mode</h4>
+                <p className="text-[10px] text-text/60">Content size is {(content.length / 1024 / 1024).toFixed(1)}MB. The graph opens progressively and loads deep branches on demand.</p>
               </div>
             </div>
             <button
@@ -691,7 +892,11 @@ function App() {
                   initialNodes={graphData.nodes}
                   initialEdges={graphData.edges}
                   isTruncated={graphData.truncated}
+                  isProcessing={graphStatus === 'processing'}
+                  isLargeFileMode={graphData.largeFileMode || content.length > LARGE_FILE_THRESHOLD}
+                  deferredCount={graphData.deferredCount}
                   onNodeSelect={setSelectedNode}
+                  onExpandNode={handleExpandGraphNode}
                 />
               </div>
               <div className="w-80 shrink-0 border-l border-border bg-background flex flex-col min-h-0">

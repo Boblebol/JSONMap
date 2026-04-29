@@ -33,9 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON Schema generation action that validates the active document and creates schema output as a selected `.schema.json` workspace document.
 - Stable fixture snapshots for generated TypeScript, Python dataclass, Pydantic v2, Go, and Rust serde outputs.
 - Roadmap with version milestones, ticket backlog, labels, and release checklist.
+- Worker-backed graph processing with an async fallback outside the React render path.
+- Progressive graph previews for large JSON documents.
+- Lazy graph branch loading for deferred object and array nodes.
+- Large-file mode with structure-first graph limits and omitted oversized scalar payloads.
 
 ### Changed
 - Graph nodes are now read-only; value edits go through the inspector for a more predictable workflow.
+- Long scalar graph labels are shortened to keep large documents navigable.
 
 ### Fixed
 - JQ and JSONPath tools now pass the query and parsed JSON arguments in the correct order.

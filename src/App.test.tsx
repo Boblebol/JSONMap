@@ -18,8 +18,25 @@ vi.mock('./components/Editor/CodeEditor', () => ({
 }));
 
 vi.mock('./components/Graph/GraphView', () => ({
-    GraphView: ({ onNodeSelect }: { onNodeSelect?: (node: any) => void }) => (
+    GraphView: ({
+        initialNodes = [],
+        isProcessing,
+        isLargeFileMode,
+        deferredCount = 0,
+        onNodeSelect,
+        onExpandNode,
+    }: {
+        initialNodes?: any[];
+        isProcessing?: boolean;
+        isLargeFileMode?: boolean;
+        deferredCount?: number;
+        onNodeSelect?: (node: any) => void;
+        onExpandNode?: (node: any) => void;
+    }) => (
         <div>
+            <div data-testid="graph-metadata">
+                nodes:{initialNodes.length};processing:{String(Boolean(isProcessing))};large:{String(Boolean(isLargeFileMode))};deferred:{deferredCount}
+            </div>
             <button
                 data-testid="graph-view"
                 onClick={() => onNodeSelect?.({
@@ -47,6 +64,21 @@ vi.mock('./components/Graph/GraphView', () => ({
                 })}
             >
                 Settings
+            </button>
+            <button
+                data-testid="graph-expand"
+                disabled={!onExpandNode}
+                onClick={() => onExpandNode?.({
+                    id: 'n_kusers',
+                    data: {
+                        label: 'users []',
+                        path: ['users'],
+                        type: 'array',
+                        hasDeferredChildren: true,
+                    },
+                })}
+            >
+                Expand deferred
             </button>
         </div>
     ),
@@ -214,6 +246,30 @@ describe('App workspace', () => {
         fireEvent.click(screen.getByTitle('Export active document'));
 
         expect(download).toHaveBeenCalledWith('{"name":"after"}', 'payload.json', 'application/json');
+    });
+
+    it('uses large-file graph processing metadata for oversized JSON documents', async () => {
+        const { container } = render(<App />);
+        const largeJson = JSON.stringify({
+            users: Array.from({ length: 80 }, (_, index) => ({
+                profile: { name: `User ${index}` },
+            })),
+            padding: 'x'.repeat(1024 * 1024),
+        });
+        const file = new File([largeJson], 'large.json', { type: 'application/json' });
+
+        fireEvent.drop(container.firstElementChild as Element, {
+            dataTransfer: {
+                files: [file],
+            },
+        });
+
+        expect(await screen.findByText('large.json')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByTestId('graph-metadata')).toHaveTextContent('large:true');
+            expect(screen.getByTestId('graph-metadata')).not.toHaveTextContent('deferred:0');
+            expect(screen.getByTestId('graph-expand')).not.toBeDisabled();
+        });
     });
 
     it('edits selected graph scalar values from the inspector', async () => {

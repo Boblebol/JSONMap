@@ -38,6 +38,25 @@ describe('NodeInspector', () => {
         expect(onValueUpdate).toHaveBeenCalledWith(['name'], 'Updated');
     });
 
+    it('shows omitted scalar previews without enabling destructive edits', () => {
+        const omittedNode = {
+            id: 'n_3',
+            data: {
+                label: 'payload: xxxxx...',
+                path: ['payload'],
+                type: 'string',
+                valuePreview: 'xxxxx...',
+                valueOmitted: true,
+            },
+        } as any;
+
+        render(<NodeInspector selectedNode={omittedNode} format="json" onValueUpdate={() => { }} />);
+
+        expect(screen.getByText(/omitted from the graph payload/)).toBeInTheDocument();
+        expect(screen.getByText('xxxxx...')).toBeInTheDocument();
+        expect(screen.queryByText('Apply')).not.toBeInTheDocument();
+    });
+
     it('offers developer actions for the selected JSON path and subtree', () => {
         const onCopyPath = vi.fn();
         const onCopySubtree = vi.fn();

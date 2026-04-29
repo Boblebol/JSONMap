@@ -33,6 +33,7 @@
 - **🚀 Multi-Format Support**: Open, edit, convert, and export **JSON**, **YAML**, **XML**, **TOML**, and **CSV**.
 - **📂 In-Memory Workspace**: Drag and drop local files, switch between documents, reset to the original version, and export modified copies.
 - **🕸️ Interactive Graph**: Navigate deep hierarchies with a zoomable graph, search nodes, and expand or collapse branches.
+- **⚡ Large-File Graph Mode**: Parse and transform graph data through a worker pipeline, show a shallow preview first, and load deferred branches on demand.
 - **✍️ Safe Editing**: Edit JSON scalar values from the inspector, copy JSONPath values, copy or export subtrees, and keep raw content visible.
 - **🧾 Versioning and Diff**: Create named snapshots, restore previous versions, export snapshots, and compare changes.
 - **🔒 Privacy First**: All processing happens **locally**. Your data never leaves your machine.
@@ -60,7 +61,7 @@ The v1.7 code generation milestone is implemented:
 - JSON Schema inference and validation as `.schema.json` documents.
 - Stable fixture snapshots for generated TypeScript, Python, Pydantic, Go, and Rust output.
 
-Next focus: v1.8 performance work, starting with moving parsing off the React render path and improving large-file graph rendering.
+Next focus: finish v1.8 performance validation with benchmark fixtures and documented tested file-size limits.
 
 ## 📸 Screenshots
 

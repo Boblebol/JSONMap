@@ -38,11 +38,16 @@ export const NodeInspector = ({
     const data = selectedNode?.data;
     const type = String(data?.type ?? '');
     const path = useMemo(() => (Array.isArray(data?.path) ? data.path : []), [data?.path]);
+    const valueOmitted = Boolean(data?.valueOmitted);
     const [value, setValue] = useState('');
 
     useEffect(() => {
         if (!data) {
             setValue('');
+            return;
+        }
+        if (data.value === undefined && data.valuePreview !== undefined) {
+            setValue(String(data.valuePreview));
             return;
         }
         setValue(data.value === null ? '' : String(data.value));
@@ -59,7 +64,7 @@ export const NodeInspector = ({
     }
 
     const label = String(data.label ?? '').split(':')[0];
-    const editable = format === 'json' && isEditableType(type);
+    const editable = format === 'json' && isEditableType(type) && !valueOmitted;
     const developerActionsEnabled = format === 'json';
 
     const handleApply = () => {
@@ -126,6 +131,20 @@ export const NodeInspector = ({
                     <div className="rounded border border-border bg-surface p-3 text-xs text-muted">
                         Select a scalar value to edit. Objects and arrays can be explored from the graph.
                     </div>
+                )}
+
+                {format === 'json' && valueOmitted && (
+                    <>
+                        <div>
+                            <div className="text-[10px] uppercase font-bold text-muted mb-1">Preview</div>
+                            <div className="rounded border border-border bg-surface p-2 text-xs text-text break-words">
+                                {value}
+                            </div>
+                        </div>
+                        <div className="rounded border border-border bg-surface p-3 text-xs text-muted">
+                            This scalar value is omitted from the graph payload in large-file mode. Use subtree export for the full value.
+                        </div>
+                    </>
                 )}
 
                 {editable && (

@@ -100,6 +100,25 @@ const branchEdges = [
     { id: 'child-leaf', source: 'child', target: 'leaf' },
 ] as Edge[];
 
+const deferredNodes = [
+    {
+        id: 'root',
+        data: { label: '{}', type: 'object', path: [], value: undefined },
+        position: { x: 0, y: 0 },
+    },
+    {
+        id: 'users',
+        data: {
+            label: 'users []',
+            type: 'array',
+            path: ['users'],
+            value: undefined,
+            hasDeferredChildren: true,
+        },
+        position: { x: 100, y: 0 },
+    },
+] as Node[];
+
 describe('GraphView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -149,5 +168,29 @@ describe('GraphView', () => {
         expect(screen.getByTestId('node-leaf')).toHaveAttribute('data-hidden', 'false');
         expect(screen.getByTestId('edge-root-child')).toHaveAttribute('data-hidden', 'false');
         expect(screen.getByTestId('edge-child-leaf')).toHaveAttribute('data-hidden', 'false');
+    });
+
+    it('loads deferred branches from the selected node', () => {
+        const onExpandNode = vi.fn();
+
+        render(
+            <GraphView
+                initialNodes={deferredNodes}
+                initialEdges={[{ id: 'root-users', source: 'root', target: 'users' }]}
+                isProcessing
+                isLargeFileMode
+                deferredCount={1}
+                onExpandNode={onExpandNode}
+            />
+        );
+
+        expect(screen.getByText('Processing')).toBeInTheDocument();
+        expect(screen.getByText('Large-file mode')).toBeInTheDocument();
+        expect(screen.getByText('Deferred: 1')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId('node-users'));
+        fireEvent.click(screen.getByLabelText('Load selected branch'));
+
+        expect(onExpandNode).toHaveBeenCalledWith(expect.objectContaining({ id: 'users' }));
     });
 });
